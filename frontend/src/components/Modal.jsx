@@ -27,8 +27,8 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
           borderBottom: '1px solid var(--border)',
         }}>
           <h2 style={{
-            fontFamily: "'Playfair Display', serif",
-            fontSize: '17px', fontWeight: 700,
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            fontSize: '18px', fontWeight: 700,
             color: 'var(--text)', letterSpacing: '-0.01em',
           }}>
             {title}

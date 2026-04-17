@@ -29,7 +29,7 @@ export default function Layout() {
           borderBottom: '1px solid rgba(255,255,255,0.07)',
         }}>
           <div style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
+            fontFamily: "Georgia, 'Times New Roman', serif",
             fontWeight: 700, fontSize: '16px',
             color: '#fff', lineHeight: 1.25, letterSpacing: '-0.01em',
           }}>
