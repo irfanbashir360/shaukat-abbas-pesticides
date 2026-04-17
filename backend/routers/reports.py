@@ -20,8 +20,10 @@ def sales_report(date_from: Optional[datetime] = None, date_to: Optional[datetim
             if category and item.product.category.value != category:
                 continue
             result.append({
-                "date": sale.date.isoformat(), "customer": sale.customer.name,
-                "product": item.product.name, "category": item.product.category.value,
+                "date": sale.date.isoformat(),
+                "customer": sale.customer.name if sale.customer else "—",
+                "product": item.product.name if item.product else "—",
+                "category": item.product.category.value if item.product else "—",
                 "quantity": item.quantity, "unit_price": item.unit_price,
                 "total": item.quantity * item.unit_price,
             })
@@ -38,8 +40,10 @@ def purchases_report(date_from: Optional[datetime] = None, date_to: Optional[dat
     for purchase in q.all():
         for item in purchase.items:
             result.append({
-                "date": purchase.date.isoformat(), "supplier": purchase.supplier.name,
-                "product": item.product.name, "category": item.product.category.value,
+                "date": purchase.date.isoformat(),
+                "supplier": purchase.supplier.name if purchase.supplier else "—",
+                "product": item.product.name if item.product else "—",
+                "category": item.product.category.value if item.product else "—",
                 "quantity": item.quantity, "unit_price": item.unit_price,
                 "total": item.quantity * item.unit_price,
                 "payment_type": purchase.payment_type.value,
