@@ -25,72 +25,61 @@ export default function Reports() {
     setLoading(false)
   }
 
-  const handlePrint = () => window.print()
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Reports</h1>
-        <button onClick={handlePrint} className="px-4 py-2 border rounded text-sm">Print</button>
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <h1 className="sap-h1">Reports</h1>
+        <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
       </div>
 
-      <div className="flex gap-2 border-b">
+      <div className="sap-tabs">
         {TABS.map(t => (
-          <button key={t} onClick={() => { setTab(t); setRows([]) }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t ? 'border-green-700 text-green-700' : 'border-transparent text-gray-500'}`}>
+          <button key={t} className={`sap-tab ${tab === t ? 'active' : ''}`} onClick={() => { setTab(t); setRows([]) }}>
             {t}
           </button>
         ))}
       </div>
 
       {(tab === 'Sales' || tab === 'Purchases') && (
-        <div className="flex gap-3 items-end">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">From</label>
-            <input type="date" className="border rounded px-3 py-2 text-sm"
-              value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+          <div style={{ flex: '0 0 160px' }}>
+            <label className="sap-label">From</label>
+            <input className="sap-input" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">To</label>
-            <input type="date" className="border rounded px-3 py-2 text-sm"
-              value={dateTo} onChange={e => setDateTo(e.target.value)} />
+          <div style={{ flex: '0 0 160px' }}>
+            <label className="sap-label">To</label>
+            <input className="sap-input" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
           </div>
-          <button onClick={load} className="px-4 py-2 bg-green-700 text-white rounded text-sm">Run</button>
+          <button className="sap-btn sap-btn-primary" onClick={load}>Run Report</button>
         </div>
       )}
 
       {(tab === 'Stock' || tab === 'Creditors') && (
-        <button onClick={load} className="px-4 py-2 bg-green-700 text-white rounded text-sm">Run</button>
+        <div>
+          <button className="sap-btn sap-btn-primary" onClick={load}>Run Report</button>
+        </div>
       )}
 
-      {loading && <p className="text-gray-400 text-sm">Loading…</p>}
+      {loading && <div style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Running report…</div>}
 
       {rows.length > 0 && tab === 'Sales' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Customer</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Qty</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
-            </tr></thead>
+        <div className="sap-card" style={{ overflow: 'hidden' }}>
+          <table className="sap-table">
+            <thead><tr><th>Date</th><th>Customer</th><th>Product</th><th>Category</th><th style={{textAlign:'right'}}>Qty</th><th style={{textAlign:'right'}}>Total</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{new Date(r.date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">{r.customer}</td>
-                  <td className="px-4 py-2">{r.product}</td>
-                  <td className="px-4 py-2 capitalize">{r.category}</td>
-                  <td className="px-4 py-2 text-right">{r.quantity}</td>
-                  <td className="px-4 py-2 text-right font-medium">PKR {r.total.toLocaleString()}</td>
+                <tr key={i}>
+                  <td>{new Date(r.date).toLocaleDateString()}</td>
+                  <td style={{fontWeight:500}}>{r.customer}</td>
+                  <td>{r.product}</td>
+                  <td style={{textTransform:'capitalize'}}>{r.category}</td>
+                  <td style={{textAlign:'right'}}>{r.quantity}</td>
+                  <td style={{textAlign:'right',fontWeight:600}}>PKR {r.total.toLocaleString()}</td>
                 </tr>
               ))}
-              <tr className="border-t bg-gray-50 font-semibold">
-                <td colSpan={5} className="px-4 py-2 text-right">Grand Total</td>
-                <td className="px-4 py-2 text-right">PKR {rows.reduce((s, r) => s + r.total, 0).toLocaleString()}</td>
+              <tr style={{ background: '#faf8f4', fontWeight: 700 }}>
+                <td colSpan={5} style={{ textAlign: 'right', padding: '12px 16px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Grand Total</td>
+                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--amber)' }}>PKR {rows.reduce((s,r) => s+r.total, 0).toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -98,24 +87,20 @@ export default function Reports() {
       )}
 
       {rows.length > 0 && tab === 'Purchases' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Supplier</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
-            </tr></thead>
+        <div className="sap-card" style={{ overflow: 'hidden' }}>
+          <table className="sap-table">
+            <thead><tr><th>Date</th><th>Supplier</th><th style={{textAlign:'right'}}>Total</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{new Date(r.date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">{r.supplier}</td>
-                  <td className="px-4 py-2 text-right font-medium">PKR {r.total.toLocaleString()}</td>
+                <tr key={i}>
+                  <td>{new Date(r.date).toLocaleDateString()}</td>
+                  <td style={{fontWeight:500}}>{r.supplier}</td>
+                  <td style={{textAlign:'right',fontWeight:600}}>PKR {r.total.toLocaleString()}</td>
                 </tr>
               ))}
-              <tr className="border-t bg-gray-50 font-semibold">
-                <td colSpan={2} className="px-4 py-2 text-right">Grand Total</td>
-                <td className="px-4 py-2 text-right">PKR {rows.reduce((s, r) => s + r.total, 0).toLocaleString()}</td>
+              <tr style={{ background: '#faf8f4', fontWeight: 700 }}>
+                <td colSpan={2} style={{ textAlign: 'right', padding: '12px 16px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Grand Total</td>
+                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--amber)' }}>PKR {rows.reduce((s,r) => s+r.total, 0).toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -123,23 +108,17 @@ export default function Reports() {
       )}
 
       {rows.length > 0 && tab === 'Stock' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Product</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Category</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Stock</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Threshold</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-            </tr></thead>
+        <div className="sap-card" style={{ overflow: 'hidden' }}>
+          <table className="sap-table">
+            <thead><tr><th>Product</th><th>Category</th><th style={{textAlign:'right'}}>Stock</th><th style={{textAlign:'right'}}>Threshold</th><th>Status</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{r.name}</td>
-                  <td className="px-4 py-2 capitalize">{r.category}</td>
-                  <td className="px-4 py-2 text-right">{r.current_stock} {r.unit}</td>
-                  <td className="px-4 py-2 text-right">{r.low_stock_threshold} {r.unit}</td>
-                  <td className="px-4 py-2"><StatusBadge status={r.is_low ? 'low' : 'ok'} label={r.is_low ? 'Low' : 'OK'} /></td>
+                <tr key={i}>
+                  <td style={{fontWeight:500}}>{r.name}</td>
+                  <td style={{textTransform:'capitalize'}}>{r.category}</td>
+                  <td style={{textAlign:'right'}}>{r.current_stock} {r.unit}</td>
+                  <td style={{textAlign:'right'}}>{r.low_stock_threshold} {r.unit}</td>
+                  <td><StatusBadge status={r.is_low ? 'low' : 'ok'} label={r.is_low ? 'Low' : 'OK'} /></td>
                 </tr>
               ))}
             </tbody>
@@ -148,29 +127,28 @@ export default function Reports() {
       )}
 
       {rows.length > 0 && tab === 'Creditors' && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50"><tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Supplier</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Owed</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Paid</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600">Balance</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Due Date</th>
-              <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-            </tr></thead>
+        <div className="sap-card" style={{ overflow: 'hidden' }}>
+          <table className="sap-table">
+            <thead><tr><th>Supplier</th><th style={{textAlign:'right'}}>Owed</th><th style={{textAlign:'right'}}>Paid</th><th style={{textAlign:'right'}}>Balance</th><th>Due Date</th><th>Status</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
-                <tr key={i} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2">{r.supplier}</td>
-                  <td className="px-4 py-2 text-right">PKR {r.amount_owed.toLocaleString()}</td>
-                  <td className="px-4 py-2 text-right">PKR {r.total_paid.toLocaleString()}</td>
-                  <td className="px-4 py-2 text-right font-semibold">PKR {r.balance.toLocaleString()}</td>
-                  <td className="px-4 py-2">{new Date(r.due_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
+                <tr key={i}>
+                  <td style={{fontWeight:500}}>{r.supplier}</td>
+                  <td style={{textAlign:'right'}}>PKR {r.amount_owed.toLocaleString()}</td>
+                  <td style={{textAlign:'right',color:'var(--success)'}}>PKR {r.total_paid.toLocaleString()}</td>
+                  <td style={{textAlign:'right',fontWeight:700}}>PKR {r.balance.toLocaleString()}</td>
+                  <td>{new Date(r.due_date).toLocaleDateString()}</td>
+                  <td><StatusBadge status={r.status} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {rows.length === 0 && !loading && (
+        <div className="sap-card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '13px' }}>
+          Select a date range and click Run Report to see results.
         </div>
       )}
     </div>

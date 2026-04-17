@@ -22,40 +22,33 @@ export default function Invoices() {
   )
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
-        <input placeholder="Search invoice number…" className="border rounded px-3 py-2 text-sm w-56"
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <h1 className="sap-h1">Invoices</h1>
+        <input className="sap-input" placeholder="Search invoice number…"
+          style={{ width: '220px' }}
           value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Invoice #</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Issued</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Payment Due</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Valid Until</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
+      <div className="sap-card" style={{ overflow: 'hidden' }}>
+        <table className="sap-table">
+          <thead>
+            <tr><th>Invoice #</th><th>Issued</th><th>Payment Due</th><th>Valid Until</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             {filtered.map(inv => {
               const { status, label } = invoiceStatus(inv)
               return (
-                <tr key={inv.id} className="border-t hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/invoices/${inv.id}`)}>
-                  <td className="px-4 py-3 font-medium text-green-800">{inv.invoice_number}</td>
-                  <td className="px-4 py-3">{new Date(inv.issued_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">{new Date(inv.payment_due_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">{new Date(inv.validity_expiry_date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3"><StatusBadge status={status} label={label} /></td>
-                  <td className="px-4 py-3 text-blue-600 text-xs">View →</td>
+                <tr key={inv.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/invoices/${inv.id}`)}>
+                  <td style={{ fontWeight: 700, color: 'var(--amber)' }}>{inv.invoice_number}</td>
+                  <td>{new Date(inv.issued_date).toLocaleDateString()}</td>
+                  <td>{new Date(inv.payment_due_date).toLocaleDateString()}</td>
+                  <td>{new Date(inv.validity_expiry_date).toLocaleDateString()}</td>
+                  <td><StatusBadge status={status} label={label} /></td>
+                  <td style={{ textAlign: 'right', color: 'var(--text-muted)', fontSize: '12px' }}>View →</td>
                 </tr>
               )
             })}
-            {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No invoices found.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="sap-empty">No invoices found.</td></tr>}
           </tbody>
         </table>
       </div>

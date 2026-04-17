@@ -16,11 +16,7 @@ export default function Purchases() {
   const [error, setError] = useState('')
 
   const load = () => getPurchases().then(setPurchases)
-  useEffect(() => {
-    load()
-    getSuppliers().then(setSuppliers)
-    getProducts().then(setProducts)
-  }, [])
+  useEffect(() => { load(); getSuppliers().then(setSuppliers); getProducts().then(setProducts) }, [])
 
   const handleItemChange = (idx, field, val) =>
     setForm(f => { const items = [...f.items]; items[idx] = { ...items[idx], [field]: val }; return { ...f, items } })
@@ -30,12 +26,12 @@ export default function Purchases() {
   const total = form.items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
 
   const handleSubmit = async () => {
+    if (!form.supplier_id) return setError('Please select a supplier')
+    if (form.items.length === 0) return setError('Add at least one item')
+    if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
+    if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
+    if (form.payment_type === 'credit' && !form.due_date) return setError('Please enter a due date for credit purchase')
     try {
-      if (!form.supplier_id) return setError('Please select a supplier')
-      if (form.items.length === 0) return setError('Add at least one item')
-      if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
-      if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
-      if (form.payment_type === 'credit' && !form.due_date) return setError('Please enter a due date for credit purchase')
       setError('')
       const payload = {
         ...form,
@@ -58,90 +54,74 @@ export default function Purchases() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Purchases</h1>
-        <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-green-700 text-white rounded text-sm">+ New Purchase</button>
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <h1 className="sap-h1">Purchases</h1>
+        <button className="sap-btn sap-btn-primary" onClick={() => setShowForm(true)}>+ New Purchase</button>
       </div>
 
       {showForm && (
-        <Modal title="New Purchase" onClose={() => setShowForm(false)}>
-          {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+        <Modal title="New Purchase" onClose={() => setShowForm(false)} size="lg">
+          {error && <div className="sap-error">{error}</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <input type="datetime-local" className="w-full border rounded px-3 py-2 text-sm"
-                value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <label className="sap-label">Date</label>
+              <input className="sap-input" type="datetime-local" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-              <select className="w-full border rounded px-3 py-2 text-sm"
-                value={form.supplier_id} onChange={e => setForm(f => ({ ...f, supplier_id: e.target.value }))}>
-                <option value="">Select…</option>
+              <label className="sap-label">Supplier</label>
+              <select className="sap-input" value={form.supplier_id} onChange={e => setForm(f => ({ ...f, supplier_id: e.target.value }))}>
+                <option value="">Select supplier…</option>
                 {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Payment Type</label>
-              <select className="w-full border rounded px-3 py-2 text-sm"
-                value={form.payment_type} onChange={e => setForm(f => ({ ...f, payment_type: e.target.value }))}>
+              <label className="sap-label">Payment Type</label>
+              <select className="sap-input" value={form.payment_type} onChange={e => setForm(f => ({ ...f, payment_type: e.target.value }))}>
                 <option value="cash">Cash</option>
                 <option value="credit">Credit</option>
               </select>
             </div>
             {form.payment_type === 'credit' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <input type="date" className="w-full border rounded px-3 py-2 text-sm"
-                  value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                <label className="sap-label">Due Date</label>
+                <input className="sap-input" type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
               </div>
             )}
           </div>
           <LineItemsTable items={form.items} products={products}
             onChange={handleItemChange} onAdd={handleAddItem} onRemove={handleRemoveItem} />
-          <div className="mt-3 text-right font-semibold">Total: PKR {total.toFixed(2)}</div>
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea className="w-full border rounded px-3 py-2 text-sm" rows={2}
-              value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '14px' }}>
+            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toFixed(2)}</span>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 border rounded text-sm">Cancel</button>
-            <button onClick={handleSubmit} className="px-4 py-2 bg-green-700 text-white rounded text-sm">Save Purchase</button>
+          <div style={{ marginBottom: '14px' }}>
+            <label className="sap-label">Notes</label>
+            <textarea className="sap-input" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleSubmit}>Save Purchase</button>
           </div>
         </Modal>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Date</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Supplier</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Payment</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Total</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
+      <div className="sap-card" style={{ overflow: 'hidden' }}>
+        <table className="sap-table">
+          <thead><tr><th>Date</th><th>Supplier</th><th>Payment</th><th>Total</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {purchases.map(p => (
-              <tr key={p.id} className={`border-t hover:bg-gray-50 ${p.is_voided ? 'opacity-50' : ''}`}>
-                <td className="px-4 py-3">{new Date(p.date).toLocaleDateString()}</td>
-                <td className="px-4 py-3">{suppliers.find(s => s.id === p.supplier_id)?.name || '—'}</td>
-                <td className="px-4 py-3 capitalize">{p.payment_type}</td>
-                <td className="px-4 py-3 font-medium">PKR {p.total_amount.toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  {p.is_voided ? <StatusBadge status="overdue" label="Voided" /> : <StatusBadge status="ok" label="Active" />}
-                </td>
-                <td className="px-4 py-3">
-                  {!p.is_voided && (
-                    <button onClick={() => handleVoid(p.id)} className="text-red-500 text-xs hover:underline">Void</button>
-                  )}
+              <tr key={p.id} className={p.is_voided ? 'voided' : ''}>
+                <td>{new Date(p.date).toLocaleDateString()}</td>
+                <td style={{ fontWeight: 500 }}>{suppliers.find(s => s.id === p.supplier_id)?.name || '—'}</td>
+                <td style={{ textTransform: 'capitalize' }}>{p.payment_type}</td>
+                <td style={{ fontWeight: 600 }}>PKR {p.total_amount.toLocaleString()}</td>
+                <td>{p.is_voided ? <StatusBadge status="overdue" label="Voided" /> : <StatusBadge status="ok" label="Active" />}</td>
+                <td style={{ textAlign: 'right' }}>
+                  {!p.is_voided && <button className="sap-btn sap-btn-danger" onClick={() => handleVoid(p.id)}>Void</button>}
                 </td>
               </tr>
             ))}
-            {purchases.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No purchases yet.</td></tr>}
+            {purchases.length === 0 && <tr><td colSpan={6} className="sap-empty">No purchases yet.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -3,6 +3,7 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '..
 import Modal from '../components/Modal'
 
 const EMPTY = { name: '', phone: '', address: '' }
+const FIELDS = [['name','Name'],['phone','Phone'],['address','Address']]
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([])
@@ -30,50 +31,44 @@ export default function Suppliers() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Suppliers</h1>
-        <button onClick={openAdd} className="px-4 py-2 bg-green-700 text-white rounded text-sm">+ Add Supplier</button>
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <h1 className="sap-h1">Suppliers</h1>
+        <button className="sap-btn sap-btn-primary" onClick={openAdd}>+ Add Supplier</button>
       </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600">Name</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Phone</th>
-              <th className="px-4 py-3 font-medium text-gray-600">Address</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
+      <div className="sap-card" style={{ overflow: 'hidden' }}>
+        <table className="sap-table">
+          <thead><tr><th>Name</th><th>Phone</th><th>Address</th><th></th></tr></thead>
           <tbody>
             {suppliers.map(s => (
-              <tr key={s.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{s.name}</td>
-                <td className="px-4 py-3">{s.phone}</td>
-                <td className="px-4 py-3">{s.address}</td>
-                <td className="px-4 py-3 flex gap-2 justify-end">
-                  <button onClick={() => openEdit(s)} className="text-blue-600 text-xs hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(s.id)} className="text-red-500 text-xs hover:underline">Delete</button>
+              <tr key={s.id}>
+                <td style={{ fontWeight: 600 }}>{s.name}</td>
+                <td>{s.phone}</td>
+                <td style={{ color: 'var(--text-muted)' }}>{s.address}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <span style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <button className="sap-btn-link" onClick={() => openEdit(s)}>Edit</button>
+                    <button className="sap-btn sap-btn-danger" onClick={() => handleDelete(s.id)}>Delete</button>
+                  </span>
                 </td>
               </tr>
             ))}
-            {suppliers.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400">No suppliers yet.</td></tr>}
+            {suppliers.length === 0 && <tr><td colSpan={4} className="sap-empty">No suppliers yet.</td></tr>}
           </tbody>
         </table>
       </div>
       {modal && (
         <Modal title={modal === 'add' ? 'Add Supplier' : 'Edit Supplier'} onClose={() => setModal(null)}>
-          {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-          {[['name','Name'],['phone','Phone'],['address','Address']].map(([field, label]) => (
-            <div key={field} className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-              <input className="w-full border rounded px-3 py-2 text-sm"
-                value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
+          {error && <div className="sap-error">{error}</div>}
+          {FIELDS.map(([field, label]) => (
+            <div key={field} style={{ marginBottom: '14px' }}>
+              <label className="sap-label">{label}</label>
+              <input className="sap-input" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
             </div>
           ))}
-          <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setModal(null)} className="px-4 py-2 border rounded text-sm">Cancel</button>
-            <button onClick={handleSave} className="px-4 py-2 bg-green-700 text-white rounded text-sm">Save</button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => setModal(null)}>Cancel</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleSave}>Save</button>
           </div>
         </Modal>
       )}

@@ -14,29 +14,30 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-md space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="font-semibold text-gray-700">Invoice Alert Thresholds</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Alert me X days before payment is due
-          </label>
-          <input type="number" min="1" max="90" className="w-full border rounded px-3 py-2 text-sm"
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <h1 className="sap-h1">Settings</h1>
+      <div className="sap-card" style={{ padding: '28px', maxWidth: '480px' }}>
+        <div className="sap-h2" style={{ marginBottom: '20px' }}>Invoice Alert Thresholds</div>
+        <div style={{ marginBottom: '18px' }}>
+          <label className="sap-label">Days before payment due date to alert</label>
+          <input className="sap-input" type="number" min="1" max="90"
             value={form.payment_due_alert_days}
             onChange={e => setForm(f => ({ ...f, payment_due_alert_days: parseInt(e.target.value) }))} />
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px' }}>
+            Alert will appear on dashboard this many days before payment is due
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Alert me X days before invoice validity expires
-          </label>
-          <input type="number" min="1" max="90" className="w-full border rounded px-3 py-2 text-sm"
+        <div style={{ marginBottom: '24px' }}>
+          <label className="sap-label">Days before validity expiry to alert</label>
+          <input className="sap-input" type="number" min="1" max="90"
             value={form.validity_expiry_alert_days}
             onChange={e => setForm(f => ({ ...f, validity_expiry_alert_days: parseInt(e.target.value) }))} />
+          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '5px' }}>
+            Alert will appear on dashboard this many days before invoice expires
+          </div>
         </div>
-        <button onClick={handleSave}
-          className="px-4 py-2 bg-green-700 text-white rounded text-sm">
-          {saved ? 'Saved!' : 'Save Settings'}
+        <button className="sap-btn sap-btn-primary" onClick={handleSave} style={{ minWidth: '140px' }}>
+          {saved ? '✓ Saved' : 'Save Settings'}
         </button>
       </div>
     </div>

@@ -10,7 +10,11 @@ export default function InvoiceDetail() {
   const load = () => getInvoice(id).then(setInv)
   useEffect(() => { load() }, [id])
 
-  if (!inv) return <p className="text-gray-500">Loading…</p>
+  if (!inv) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
+      <div style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Loading…</div>
+    </div>
+  )
 
   const now = new Date()
   const payStatus = inv.is_paid ? 'paid' : new Date(inv.payment_due_date) < now ? 'overdue' : 'unpaid'
@@ -21,45 +25,57 @@ export default function InvoiceDetail() {
   const handlePdf = () => window.open(getInvoicePdfUrl(inv.id), '_blank')
 
   return (
-    <div className="max-w-2xl space-y-6" id="invoice-print">
-      <div className="flex items-center justify-between no-print">
-        <h1 className="text-2xl font-bold text-gray-800">Invoice {inv.invoice_number}</h1>
-        <div className="flex gap-2">
+    <div className="sap-page" style={{ maxWidth: '680px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Actions bar */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <div>
+          <div className="sap-section-title" style={{ marginBottom: '4px' }}>Invoice</div>
+          <h1 className="sap-h1">{inv.invoice_number}</h1>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
           {!inv.is_paid && (
-            <button onClick={handleMarkPaid}
-              className="px-4 py-2 bg-green-700 text-white rounded text-sm">Mark Paid</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleMarkPaid}>Mark Paid</button>
           )}
-          <button onClick={handlePrint}
-            className="px-4 py-2 border rounded text-sm">Print</button>
-          <button onClick={handlePdf}
-            className="px-4 py-2 bg-blue-700 text-white rounded text-sm">Export PDF</button>
+          <button className="sap-btn sap-btn-ghost" onClick={handlePrint}>Print</button>
+          <button className="sap-btn sap-btn-ghost" onClick={handlePdf}>Export PDF</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="border-b-2 border-green-800 pb-4 mb-4">
-          <h2 className="text-xl font-bold text-green-800">Shaukat Abbas Pesticides</h2>
+      {/* Invoice card */}
+      <div className="sap-card" style={{ padding: '32px' }}>
+        {/* Header */}
+        <div style={{
+          borderBottom: '2.5px solid var(--forest)',
+          paddingBottom: '20px', marginBottom: '24px',
+        }}>
+          <div style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: '22px', fontWeight: 700,
+            color: 'var(--forest)', letterSpacing: '-0.01em',
+          }}>
+            Shaukat Abbas Pesticides
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Official Tax Invoice
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-          <div>
-            <p className="text-gray-500">Invoice Number</p>
-            <p className="font-semibold">{inv.invoice_number}</p>
-          </div>
-          <div>
-            <p className="text-gray-500">Issued Date</p>
-            <p className="font-semibold">{new Date(inv.issued_date).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-500">Payment Due</p>
-            <p className="font-semibold">{new Date(inv.payment_due_date).toLocaleDateString()}</p>
-            <StatusBadge status={payStatus} label={payStatus === 'paid' ? 'Paid' : payStatus === 'overdue' ? 'Overdue' : 'Pending'} />
-          </div>
-          <div>
-            <p className="text-gray-500">Valid Until</p>
-            <p className="font-semibold">{new Date(inv.validity_expiry_date).toLocaleDateString()}</p>
-            <StatusBadge status={valStatus} label={valStatus === 'overdue' ? 'Expired' : 'Valid'} />
-          </div>
+        {/* Details grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          {[
+            { label: 'Invoice Number', value: inv.invoice_number, mono: true },
+            { label: 'Issued Date', value: new Date(inv.issued_date).toLocaleDateString() },
+            { label: 'Payment Due', value: new Date(inv.payment_due_date).toLocaleDateString(), badge: <StatusBadge status={payStatus} label={payStatus === 'paid' ? 'Paid' : payStatus === 'overdue' ? 'Overdue' : 'Pending'} /> },
+            { label: 'Valid Until', value: new Date(inv.validity_expiry_date).toLocaleDateString(), badge: <StatusBadge status={valStatus} label={valStatus === 'overdue' ? 'Expired' : 'Valid'} /> },
+          ].map(({ label, value, badge, mono }) => (
+            <div key={label}>
+              <div className="sap-section-title" style={{ marginBottom: '4px' }}>{label}</div>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)', fontFamily: mono ? 'monospace' : 'inherit', letterSpacing: mono ? '0.04em' : 'inherit' }}>
+                {value}
+              </div>
+              {badge && <div style={{ marginTop: '6px' }}>{badge}</div>}
+            </div>
+          ))}
         </div>
       </div>
     </div>

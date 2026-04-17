@@ -1,2 +1,250 @@
-/* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────── */
+:root {
+  --forest:         #0f2418;
+  --forest-mid:     #1b3828;
+  --forest-hover:   #243f2f;
+  --amber:          #c8821a;
+  --amber-hover:    #b07018;
+  --amber-subtle:   rgba(200,130,26,0.10);
+  --cream:          #f7f4ee;
+  --white:          #ffffff;
+  --text:           #18251f;
+  --text-muted:     #7b8d84;
+  --text-faint:     #b0bcb6;
+  --border:         #e6e0d5;
+  --border-mid:     #d4ccbf;
+  --danger:         #c03530;
+  --danger-subtle:  rgba(192,53,48,0.09);
+  --success:        #1d7a4d;
+  --success-subtle: rgba(29,122,77,0.09);
+  --warning:        #b87800;
+  --warning-subtle: rgba(184,120,0,0.09);
+  --info:           #1a5c8d;
+  --info-subtle:    rgba(26,92,141,0.09);
+
+  --shadow-xs: 0 1px 2px rgba(15,36,24,0.06);
+  --shadow-sm: 0 2px 6px rgba(15,36,24,0.08), 0 1px 2px rgba(15,36,24,0.04);
+  --shadow:    0 4px 16px rgba(15,36,24,0.10), 0 1px 4px rgba(15,36,24,0.05);
+  --shadow-lg: 0 12px 40px rgba(15,36,24,0.16), 0 3px 8px rgba(15,36,24,0.08);
+  --shadow-modal: 0 24px 64px rgba(15,36,24,0.22), 0 6px 16px rgba(15,36,24,0.10);
+
+  --r-xs: 5px;  --r-sm: 8px;  --r: 12px;  --r-lg: 16px;
+}
+
+/* ── Reset ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Typography ────────────────────────────── */
+.sap-h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--text);
+}
+.sap-h2 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+.sap-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.sap-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-muted);
+}
+
+/* ── Page animation ────────────────────────── */
+.sap-page {
+  animation: sapFadeUp 0.22s ease both;
+}
+@keyframes sapFadeUp {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cards ─────────────────────────────────── */
+.sap-card {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Tables ────────────────────────────────── */
+.sap-table { width: 100%; border-collapse: collapse; }
+.sap-table thead th {
+  padding: 10px 16px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  text-align: left;
+  background: #faf8f4;
+  border-bottom: 1.5px solid var(--border);
+  white-space: nowrap;
+}
+.sap-table thead th:first-child { border-radius: var(--r) 0 0 0; }
+.sap-table thead th:last-child  { border-radius: 0 var(--r) 0 0; }
+.sap-table tbody td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.042);
+  color: var(--text);
+  font-size: 13px;
+}
+.sap-table tbody tr:last-child td { border-bottom: none; }
+.sap-table tbody tr { transition: background 0.10s; }
+.sap-table tbody tr:hover { background: rgba(200,130,26,0.03); }
+.sap-table tbody tr.voided { opacity: 0.45; }
+
+/* ── Buttons ───────────────────────────────── */
+.sap-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--r-sm);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none;
+  transition: all 0.14s;
+  white-space: nowrap; line-height: 1;
+  text-decoration: none;
+}
+.sap-btn-primary {
+  background: var(--amber); color: white;
+  box-shadow: 0 2px 8px rgba(200,130,26,0.28);
+}
+.sap-btn-primary:hover {
+  background: var(--amber-hover);
+  box-shadow: 0 4px 14px rgba(200,130,26,0.35);
+  transform: translateY(-1px);
+}
+.sap-btn-primary:active { transform: translateY(0); }
+
+.sap-btn-ghost {
+  background: transparent; color: var(--text);
+  border: 1.5px solid var(--border);
+}
+.sap-btn-ghost:hover { border-color: var(--border-mid); background: rgba(0,0,0,0.02); }
+
+.sap-btn-danger {
+  background: transparent; color: var(--danger);
+  border: 1.5px solid rgba(192,53,48,0.22);
+  padding: 5px 12px; font-size: 12px;
+}
+.sap-btn-danger:hover { background: var(--danger-subtle); border-color: var(--danger); }
+
+.sap-btn-link {
+  background: transparent; color: var(--amber); border: none;
+  font-size: 12px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer; padding: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.sap-btn-link-muted {
+  background: transparent; color: var(--text-muted); border: none;
+  font-size: 12px; font-weight: 500;
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer; padding: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.sap-btn-link-muted:hover { color: var(--text); }
+
+/* ── Form controls ─────────────────────────── */
+.sap-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; color: var(--text);
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  outline: none;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+.sap-input:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(200,130,26,0.12);
+}
+.sap-input::placeholder { color: var(--text-faint); }
+
+/* ── Status badges ─────────────────────────── */
+.sap-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.badge-success  { background: var(--success-subtle);  color: var(--success); }
+.badge-danger   { background: var(--danger-subtle);   color: var(--danger); }
+.badge-warning  { background: var(--warning-subtle);  color: var(--warning); }
+.badge-info     { background: var(--info-subtle);     color: var(--info); }
+.badge-muted    { background: rgba(0,0,0,0.05);       color: var(--text-muted); }
+
+/* ── Error message ─────────────────────────── */
+.sap-error {
+  background: var(--danger-subtle);
+  border: 1px solid rgba(192,53,48,0.22);
+  color: var(--danger);
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+  font-size: 13px; font-weight: 500;
+  margin-bottom: 14px;
+}
+
+/* ── Empty state ───────────────────────────── */
+.sap-empty {
+  padding: 52px 24px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+/* ── Tab nav ───────────────────────────────── */
+.sap-tabs { display: flex; gap: 0; border-bottom: 1.5px solid var(--border); margin-bottom: 16px; }
+.sap-tab {
+  padding: 8px 20px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-muted); cursor: pointer;
+  border: none; background: transparent;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1.5px;
+  transition: color 0.14s, border-color 0.14s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  text-transform: capitalize;
+}
+.sap-tab:hover { color: var(--text); }
+.sap-tab.active { color: var(--amber); border-bottom-color: var(--amber); font-weight: 700; }
+
+/* ── Scrollbar ─────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
