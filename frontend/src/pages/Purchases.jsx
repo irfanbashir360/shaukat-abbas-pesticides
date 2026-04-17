@@ -31,6 +31,11 @@ export default function Purchases() {
 
   const handleSubmit = async () => {
     try {
+      if (!form.supplier_id) return setError('Please select a supplier')
+      if (form.items.length === 0) return setError('Add at least one item')
+      if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
+      if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
+      if (form.payment_type === 'credit' && !form.due_date) return setError('Please enter a due date for credit purchase')
       setError('')
       const payload = {
         ...form,

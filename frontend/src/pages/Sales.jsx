@@ -32,6 +32,10 @@ export default function Sales() {
   const total = form.items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
 
   const handleSubmit = async () => {
+    if (!form.customer_id) return setError('Please select a customer')
+    if (form.items.length === 0) return setError('Add at least one item')
+    if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
+    if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
     try {
       setError('')
       const payload = {
