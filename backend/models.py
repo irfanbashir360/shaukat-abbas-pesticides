@@ -1,6 +1,6 @@
 # backend/models.py
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Enum, Text
 from sqlalchemy.orm import relationship
 from database import Base
@@ -18,6 +18,12 @@ class CreditorStatus(str, enum.Enum):
     outstanding = "outstanding"
     partially_paid = "partially_paid"
     settled = "settled"
+
+class MovementType(str, enum.Enum):
+    purchase = "purchase"
+    sale = "sale"
+    void_purchase = "void_purchase"
+    void_sale = "void_sale"
 
 class Product(Base):
     __tablename__ = "products"
@@ -48,7 +54,7 @@ class Customer(Base):
 class Purchase(Base):
     __tablename__ = "purchases"
     id = Column(Integer, primary_key=True, index=True)
-    date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=False)
     payment_type = Column(Enum(PaymentType), nullable=False)
     total_amount = Column(Float, nullable=False)
@@ -72,7 +78,7 @@ class PurchaseItem(Base):
 class Sale(Base):
     __tablename__ = "sales"
     id = Column(Integer, primary_key=True, index=True)
-    date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
     total_amount = Column(Float, nullable=False)
     notes = Column(Text, default="")
@@ -97,7 +103,7 @@ class Invoice(Base):
     id = Column(Integer, primary_key=True, index=True)
     sale_id = Column(Integer, ForeignKey("sales.id"), nullable=False)
     invoice_number = Column(String, nullable=False, unique=True)
-    issued_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    issued_date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     payment_due_date = Column(DateTime, nullable=False)
     validity_expiry_date = Column(DateTime, nullable=False)
     is_paid = Column(Boolean, default=False)
@@ -109,10 +115,11 @@ class StockMovement(Base):
     __tablename__ = "stock_movements"
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
-    date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    movement_type = Column(String, nullable=False)
+    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    movement_type = Column(Enum(MovementType), nullable=False)
     quantity_change = Column(Float, nullable=False)
     reference_id = Column(Integer, nullable=False)
+    reference_type = Column(String, nullable=False, default="purchase")
     product = relationship("Product")
 
 class Creditor(Base):
@@ -125,13 +132,13 @@ class Creditor(Base):
     status = Column(Enum(CreditorStatus), default=CreditorStatus.outstanding)
     supplier = relationship("Supplier")
     purchase = relationship("Purchase", back_populates="creditor")
-    payments = relationship("CreditorPayment", back_populates="creditor")
+    payments = relationship("CreditorPayment", back_populates="creditor", cascade="all, delete-orphan")
 
 class CreditorPayment(Base):
     __tablename__ = "creditor_payments"
     id = Column(Integer, primary_key=True, index=True)
     creditor_id = Column(Integer, ForeignKey("creditors.id"), nullable=False)
-    date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     amount_paid = Column(Float, nullable=False)
     notes = Column(Text, default="")
     creditor = relationship("Creditor", back_populates="payments")
