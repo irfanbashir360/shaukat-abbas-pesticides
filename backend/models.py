@@ -152,17 +152,17 @@ class InvoiceAlertSettings(Base):
 class BusinessSettings(Base):
     __tablename__ = "business_settings"
     id = Column(Integer, primary_key=True, index=True)
-    business_name = Column(String, default="Your Business Name")
-    tagline = Column(String, default="")
-    address = Column(String, default="")
-    phone = Column(String, default="")
-    email = Column(String, default="")
-    ntn = Column(String, default="")
-    strn = Column(String, default="")
-    bank_name = Column(String, default="")
-    bank_account = Column(String, default="")
-    bank_iban = Column(String, default="")
-    footer_note = Column(String, default="Thank you for your business!")
+    business_name = Column(String, nullable=False, default="Your Business Name")
+    tagline = Column(String, nullable=False, default="")
+    address = Column(String, nullable=False, default="")
+    phone = Column(String, nullable=False, default="")
+    email = Column(String, nullable=False, default="")
+    ntn = Column(String, nullable=False, default="")
+    strn = Column(String, nullable=False, default="")
+    bank_name = Column(String, nullable=False, default="")
+    bank_account = Column(String, nullable=False, default="")
+    bank_iban = Column(String, nullable=False, default="")
+    footer_note = Column(String, nullable=False, default="Thank you for your business!")
     logo_filename = Column(String, nullable=True)
 
 class Unit(Base):
