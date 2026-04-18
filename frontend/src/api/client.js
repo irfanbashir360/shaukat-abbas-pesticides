@@ -28,6 +28,7 @@ export const voidPurchase = (id, reason) => api.post(`/purchases/${id}/void`, { 
 // Sales
 export const getSales = () => api.get('/sales').then(r => r.data)
 export const createSale = (data) => api.post('/sales', data).then(r => r.data)
+export const updateSale = (id, data) => api.put(`/sales/${id}`, data).then(r => r.data)
 export const voidSale = (id, reason) => api.post(`/sales/${id}/void`, { void_reason: reason }).then(r => r.data)
 
 // Invoices
@@ -55,3 +56,25 @@ export const getCreditorsReport = () => api.get('/reports/creditors').then(r => 
 // Settings
 export const getSettings = () => api.get('/settings').then(r => r.data)
 export const updateSettings = (data) => api.put('/settings', data).then(r => r.data)
+
+// Settings — logo
+export const uploadLogo = (file) => {
+  const fd = new FormData()
+  fd.append('file', file)
+  return api.post('/settings/logo', fd).then(r => r.data)
+}
+export const deleteLogo = () => api.delete('/settings/logo').then(r => r.data)
+export const getLogoUrl = () => `/api/settings/logo`
+
+// Units
+export const getUnits = () => api.get('/units').then(r => r.data)
+export const createUnit = (name) => api.post('/units', { name }).then(r => r.data)
+export const deleteUnit = (id) => api.delete(`/units/${id}`)
+
+// Backup
+export const exportBackup = () => { window.location.href = '/api/backup/export' }
+export const importBackup = (file) => {
+  const fd = new FormData()
+  fd.append('file', file)
+  return api.post('/backup/import', fd).then(r => r.data)
+}
