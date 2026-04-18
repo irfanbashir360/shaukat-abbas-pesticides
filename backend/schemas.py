@@ -147,17 +147,6 @@ class CreditorPaymentCreate(BaseModel):
     amount_paid: float
     notes: str = ""
 
-# --- Settings ---
-class SettingsUpdate(BaseModel):
-    payment_due_alert_days: int
-    validity_expiry_alert_days: int
-
-class SettingsOut(BaseModel):
-    id: int
-    payment_due_alert_days: int
-    validity_expiry_alert_days: int
-    model_config = {"from_attributes": True}
-
 # --- Dashboard ---
 class DashboardSummary(BaseModel):
     today_sales: float
