@@ -169,3 +169,37 @@ class DashboardSummary(BaseModel):
     creditors_overdue_count: int
     payment_due_alerts: List[InvoiceOut]
     validity_expiry_alerts: List[InvoiceOut]
+
+# --- Business Settings ---
+class BusinessSettingsFields(BaseModel):
+    business_name: str = "Your Business Name"
+    tagline: str = ""
+    address: str = ""
+    phone: str = ""
+    email: str = ""
+    ntn: str = ""
+    strn: str = ""
+    bank_name: str = ""
+    bank_account: str = ""
+    bank_iban: str = ""
+    footer_note: str = "Thank you for your business!"
+
+class CombinedSettingsUpdate(BusinessSettingsFields):
+    payment_due_alert_days: int = 3
+    validity_expiry_alert_days: int = 7
+
+class CombinedSettingsOut(BusinessSettingsFields):
+    id: int
+    logo_filename: Optional[str] = None
+    payment_due_alert_days: int
+    validity_expiry_alert_days: int
+    model_config = {"from_attributes": True}
+
+# --- Units ---
+class UnitCreate(BaseModel):
+    name: str
+
+class UnitOut(BaseModel):
+    id: int
+    name: str
+    model_config = {"from_attributes": True}
