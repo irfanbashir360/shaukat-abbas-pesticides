@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../api/client'
+import { getProducts, createProduct, updateProduct, deleteProduct, getUnits } from '../api/client'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
 
 const CATEGORIES = ['fertilizer', 'seed', 'pesticide']
-const EMPTY = { name: '', category: 'fertilizer', unit: 'kg', price_per_unit: '', current_stock: '', low_stock_threshold: '' }
+const EMPTY = { name: '', category: 'fertilizer', unit: '', price_per_unit: '', current_stock: '', low_stock_threshold: '' }
 
 export default function Products() {
   const [tab, setTab] = useState('fertilizer')
@@ -15,13 +15,15 @@ export default function Products() {
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [units, setUnits] = useState([])
   const toast = useToast()
   const { confirm } = useConfirm()
 
   const load = () => getProducts(tab).then(setProducts)
   useEffect(() => { load() }, [tab])
+  useEffect(() => { getUnits().then(setUnits) }, [])
 
-  const openAdd = () => { setForm({ ...EMPTY, category: tab }); setModal('add'); setError('') }
+  const openAdd = () => { setForm({ ...EMPTY, category: tab, unit: units[0]?.name || '' }); setModal('add'); setError('') }
   const openEdit = (p) => { setForm({ ...p }); setModal(p); setError('') }
   const closeModal = () => setModal(null)
 
@@ -110,7 +112,6 @@ export default function Products() {
           {error && <div className="sap-error">{error}</div>}
           {[
             ['name', 'Name', 'text'],
-            ['unit', 'Unit (kg / bag / litre)', 'text'],
             ['price_per_unit', 'Price per Unit (PKR)', 'number'],
             ['current_stock', 'Current Stock', 'number'],
             ['low_stock_threshold', 'Low Stock Alert At', 'number'],
@@ -121,6 +122,15 @@ export default function Products() {
                 value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
             </div>
           ))}
+          <div style={{ marginBottom: '14px' }}>
+            <label className="sap-label">Unit</label>
+            <select className="sap-input" value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
+              {units.length === 0
+                ? <option value="">No units — add in Settings</option>
+                : units.map(u => <option key={u.id} value={u.name}>{u.name}</option>)
+              }
+            </select>
+          </div>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Category</label>
             <select className="sap-input" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
