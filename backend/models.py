@@ -148,3 +148,24 @@ class InvoiceAlertSettings(Base):
     id = Column(Integer, primary_key=True, index=True)
     payment_due_alert_days = Column(Integer, nullable=False, default=3)
     validity_expiry_alert_days = Column(Integer, nullable=False, default=7)
+
+class BusinessSettings(Base):
+    __tablename__ = "business_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    business_name = Column(String, default="Your Business Name")
+    tagline = Column(String, default="")
+    address = Column(String, default="")
+    phone = Column(String, default="")
+    email = Column(String, default="")
+    ntn = Column(String, default="")
+    strn = Column(String, default="")
+    bank_name = Column(String, default="")
+    bank_account = Column(String, default="")
+    bank_iban = Column(String, default="")
+    footer_note = Column(String, default="Thank you for your business!")
+    logo_filename = Column(String, nullable=True)
+
+class Unit(Base):
+    __tablename__ = "units"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
