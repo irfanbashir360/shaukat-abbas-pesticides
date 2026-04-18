@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../api/client'
 import Modal from '../components/Modal'
+import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/Confirm'
 
 const EMPTY = { name: '', phone: '', address: '' }
-const FIELDS = [['name','Name'],['phone','Phone'],['address','Address']]
+const FIELDS = [['name', 'Name'], ['phone', 'Phone'], ['address', 'Address']]
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([])
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const toast = useToast()
+  const { confirm } = useConfirm()
 
   const load = () => getSuppliers().then(setSuppliers)
   useEffect(() => { load() }, [])
@@ -18,16 +23,27 @@ export default function Suppliers() {
   const openEdit = (s) => { setForm(s); setModal(s); setError('') }
 
   const handleSave = async () => {
+    if (!form.name.trim()) return setError('Supplier name is required')
     try {
+      setError(''); setSaving(true)
       if (modal === 'add') await createSupplier(form)
       else await updateSupplier(modal.id, form)
-      await load(); setModal(null)
-    } catch (e) { setError(e.response?.data?.detail || 'Error') }
+      await load()
+      setModal(null)
+      toast(modal === 'add' ? 'Supplier added' : 'Supplier updated')
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Error saving supplier')
+    } finally { setSaving(false) }
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete supplier?')) return
-    await deleteSupplier(id); load()
+    const yes = await confirm('Delete this supplier? This cannot be undone.')
+    if (!yes) return
+    try {
+      await deleteSupplier(id)
+      load()
+      toast('Supplier deleted')
+    } catch (e) { toast(e.response?.data?.detail || 'Failed to delete supplier', 'error') }
   }
 
   return (
@@ -43,8 +59,8 @@ export default function Suppliers() {
             {suppliers.map(s => (
               <tr key={s.id}>
                 <td style={{ fontWeight: 600 }}>{s.name}</td>
-                <td>{s.phone}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{s.address}</td>
+                <td>{s.phone || '—'}</td>
+                <td style={{ color: 'var(--text-muted)' }}>{s.address || '—'}</td>
                 <td style={{ textAlign: 'right' }}>
                   <span style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                     <button className="sap-btn-link" onClick={() => openEdit(s)}>Edit</button>
@@ -68,7 +84,9 @@ export default function Suppliers() {
           ))}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
             <button className="sap-btn sap-btn-ghost" onClick={() => setModal(null)}>Cancel</button>
-            <button className="sap-btn sap-btn-primary" onClick={handleSave}>Save</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
           </div>
         </Modal>
       )}

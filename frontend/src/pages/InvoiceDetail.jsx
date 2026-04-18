@@ -2,17 +2,20 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getInvoice, markInvoicePaid, getInvoicePdfUrl } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
+import { useToast } from '../components/Toast'
 
 export default function InvoiceDetail() {
   const { id } = useParams()
   const [inv, setInv] = useState(null)
+  const [marking, setMarking] = useState(false)
+  const toast = useToast()
 
-  const load = () => getInvoice(id).then(setInv)
+  const load = () => getInvoice(id).then(setInv).catch(() => toast('Failed to load invoice', 'error'))
   useEffect(() => { load() }, [id])
 
   if (!inv) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
-      <div style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Loading…</div>
+      <div style={{ color: 'var(--text-faint)', fontSize: '14px' }}>Loading…</div>
     </div>
   )
 
@@ -20,13 +23,21 @@ export default function InvoiceDetail() {
   const payStatus = inv.is_paid ? 'paid' : new Date(inv.payment_due_date) < now ? 'overdue' : 'unpaid'
   const valStatus = new Date(inv.validity_expiry_date) < now ? 'overdue' : 'ok'
 
-  const handleMarkPaid = async () => { await markInvoicePaid(inv.id); load() }
-  const handlePrint = () => window.print()
+  const handleMarkPaid = async () => {
+    try {
+      setMarking(true)
+      await markInvoicePaid(inv.id)
+      load()
+      toast('Invoice marked as paid')
+    } catch (e) {
+      toast(e.response?.data?.detail || 'Failed to mark paid', 'error')
+    } finally { setMarking(false) }
+  }
+
   const handlePdf = () => window.open(getInvoicePdfUrl(inv.id), '_blank')
 
   return (
     <div className="sap-page" style={{ maxWidth: '680px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Actions bar */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
           <div className="sap-section-title" style={{ marginBottom: '4px' }}>Invoice</div>
@@ -34,33 +45,32 @@ export default function InvoiceDetail() {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {!inv.is_paid && (
-            <button className="sap-btn sap-btn-primary" onClick={handleMarkPaid}>Mark Paid</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleMarkPaid} disabled={marking}>
+              {marking ? 'Saving…' : 'Mark Paid'}
+            </button>
           )}
-          <button className="sap-btn sap-btn-ghost" onClick={handlePrint}>Print</button>
+          <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
           <button className="sap-btn sap-btn-ghost" onClick={handlePdf}>Export PDF</button>
         </div>
       </div>
 
-      {/* Invoice card */}
       <div className="sap-card" style={{ padding: '32px' }}>
-        {/* Header */}
         <div style={{
           borderBottom: '2.5px solid var(--forest)',
           paddingBottom: '20px', marginBottom: '24px',
         }}>
           <div style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: '22px', fontWeight: 700,
             color: 'var(--forest)', letterSpacing: '-0.01em',
           }}>
             Shaukat Abbas Pesticides
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
             Official Tax Invoice
           </div>
         </div>
 
-        {/* Details grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           {[
             { label: 'Invoice Number', value: inv.invoice_number, mono: true },

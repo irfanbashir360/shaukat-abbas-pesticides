@@ -1,59 +1,104 @@
+const th = {
+  padding: '9px 12px', fontSize: '12px', fontWeight: 700,
+  textTransform: 'uppercase', letterSpacing: '0.06em',
+  color: '#7b8d84', background: '#faf8f4',
+  borderBottom: '1.5px solid #e6e0d5', textAlign: 'left',
+}
+const td = {
+  padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.05)',
+  fontSize: '14px', color: '#18251f', verticalAlign: 'middle',
+}
+
 export default function LineItemsTable({ items, products, onChange, onAdd, onRemove }) {
   return (
-    <div>
-      <table className="w-full text-sm border-collapse mb-2">
+    <div style={{ border: '1.5px solid #e6e0d5', borderRadius: '10px', overflow: 'hidden', marginBottom: '4px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr className="bg-gray-50 text-left">
-            <th className="p-2 border">Product</th>
-            <th className="p-2 border w-24">Qty</th>
-            <th className="p-2 border w-28">Unit Price</th>
-            <th className="p-2 border w-24">Total</th>
-            <th className="p-2 border w-10"></th>
+          <tr>
+            <th style={th}>Product</th>
+            <th style={{ ...th, width: '100px' }}>Qty</th>
+            <th style={{ ...th, width: '130px' }}>Unit Price</th>
+            <th style={{ ...th, width: '110px', textAlign: 'right' }}>Total</th>
+            <th style={{ ...th, width: '40px' }}></th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, idx) => (
             <tr key={idx}>
-              <td className="p-2 border">
+              <td style={td}>
                 <select
-                  className="w-full border rounded px-2 py-1"
+                  style={{
+                    width: '100%', padding: '7px 10px',
+                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
                   value={item.product_id}
-                  onChange={e => onChange(idx, 'product_id', parseInt(e.target.value))}
+                  onChange={e => onChange(idx, 'product_id', e.target.value)}
                 >
                   <option value="">Select product…</option>
                   {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} ({p.unit})</option>
+                    <option key={p.id} value={String(p.id)}>{p.name} ({p.unit})</option>
                   ))}
                 </select>
               </td>
-              <td className="p-2 border">
-                <input type="number" min="0" step="0.01"
-                  className="w-full border rounded px-2 py-1"
+              <td style={td}>
+                <input
+                  type="number" min="0" step="0.01"
+                  style={{
+                    width: '100%', padding: '7px 10px',
+                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
                   value={item.quantity}
                   onChange={e => onChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
                 />
               </td>
-              <td className="p-2 border">
-                <input type="number" min="0" step="0.01"
-                  className="w-full border rounded px-2 py-1"
+              <td style={td}>
+                <input
+                  type="number" min="0" step="0.01"
+                  style={{
+                    width: '100%', padding: '7px 10px',
+                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
                   value={item.unit_price}
                   onChange={e => onChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
                 />
               </td>
-              <td className="p-2 border text-right">
-                PKR {(item.quantity * item.unit_price).toFixed(2)}
+              <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: '#c8821a' }}>
+                PKR {(item.quantity * item.unit_price).toFixed(0)}
               </td>
-              <td className="p-2 border text-center">
-                <button onClick={() => onRemove(idx)} className="text-red-500 hover:text-red-700 font-bold">×</button>
+              <td style={{ ...td, textAlign: 'center', padding: '10px 8px' }}>
+                <button
+                  onClick={() => onRemove(idx)}
+                  style={{
+                    width: '24px', height: '24px', borderRadius: '50%',
+                    border: 'none', background: 'rgba(192,53,48,0.1)',
+                    color: '#c03530', cursor: 'pointer', fontSize: '16px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    lineHeight: 1, fontWeight: 700,
+                  }}
+                >×</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={onAdd}
-        className="text-sm text-green-700 hover:text-green-900 underline">
-        + Add item
-      </button>
+      <div style={{ padding: '10px 12px', background: '#fafafa', borderTop: '1px solid #e6e0d5' }}>
+        <button
+          onClick={onAdd}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '13px', fontWeight: 600, color: '#1d7a4d',
+            padding: 0, fontFamily: 'inherit',
+          }}
+        >
+          + Add item
+        </button>
+      </div>
     </div>
   )
 }

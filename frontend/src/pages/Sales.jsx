@@ -3,6 +3,8 @@ import { getSales, createSale, voidSale, getCustomers, getProducts, createInvoic
 import LineItemsTable from '../components/LineItemsTable'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/Confirm'
 import { useNavigate } from 'react-router-dom'
 
 const today = () => new Date().toISOString().slice(0, 16)
@@ -17,7 +19,10 @@ export default function Sales() {
   const [invForm, setInvForm] = useState({ payment_due_date: '', validity_expiry_date: '' })
   const [form, setForm] = useState({ date: today(), customer_id: '', notes: '', items: [{ ...EMPTY_ITEM }] })
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
+  const toast = useToast()
+  const { confirm, prompt } = useConfirm()
 
   const load = () => getSales().then(setSales)
   useEffect(() => { load(); getCustomers().then(setCustomers); getProducts().then(setProducts) }, [])
@@ -32,22 +37,30 @@ export default function Sales() {
     if (form.items.length === 0) return setError('Add at least one item')
     if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
     if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
+    if (form.items.some(i => i.unit_price <= 0)) return setError('All unit prices must be greater than 0')
     try {
-      setError('')
+      setError(''); setSaving(true)
       const payload = {
         ...form,
         customer_id: parseInt(form.customer_id),
         date: new Date(form.date).toISOString(),
-        items: form.items.map(i => ({ ...i, product_id: parseInt(i.product_id) }))
+        items: form.items.map(i => ({ ...i, product_id: parseInt(i.product_id), quantity: parseFloat(i.quantity), unit_price: parseFloat(i.unit_price) }))
       }
       const sale = await createSale(payload)
       await load()
       setShowForm(false)
-      if (confirm('Sale recorded. Create invoice now?')) setInvoiceModal(sale)
-    } catch (e) { setError(e.response?.data?.detail || 'Failed to create sale') }
+      setForm({ date: today(), customer_id: '', notes: '', items: [{ ...EMPTY_ITEM }] })
+      toast('Sale recorded successfully')
+      const yes = await confirm('Sale saved. Create invoice now?')
+      if (yes) setInvoiceModal(sale)
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed to create sale')
+    } finally { setSaving(false) }
   }
 
   const handleCreateInvoice = async () => {
+    if (!invForm.payment_due_date) return toast('Please enter a payment due date', 'error')
+    if (!invForm.validity_expiry_date) return toast('Please enter a validity expiry date', 'error')
     try {
       const inv = await createInvoice({
         sale_id: invoiceModal.id,
@@ -55,14 +68,20 @@ export default function Sales() {
         validity_expiry_date: new Date(invForm.validity_expiry_date).toISOString(),
       })
       setInvoiceModal(null)
+      setInvForm({ payment_due_date: '', validity_expiry_date: '' })
+      toast('Invoice created')
       navigate(`/invoices/${inv.id}`)
-    } catch (e) { alert(e.response?.data?.detail || 'Failed to create invoice') }
+    } catch (e) { toast(e.response?.data?.detail || 'Failed to create invoice', 'error') }
   }
 
   const handleVoid = async (id) => {
-    const reason = prompt('Reason for voiding?')
+    const reason = await prompt('Enter reason for voiding this sale:')
     if (!reason) return
-    await voidSale(id, reason); load()
+    try {
+      await voidSale(id, reason)
+      load()
+      toast('Sale voided')
+    } catch (e) { toast(e.response?.data?.detail || 'Failed to void sale', 'error') }
   }
 
   return (
@@ -92,8 +111,8 @@ export default function Sales() {
             onChange={handleItemChange}
             onAdd={() => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))}
             onRemove={(idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} />
-          <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '14px' }}>
-            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toFixed(2)}</span>
+          <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '15px' }}>
+            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toLocaleString()}</span>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Notes</label>
@@ -101,14 +120,16 @@ export default function Sales() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
             <button className="sap-btn sap-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="sap-btn sap-btn-primary" onClick={handleSubmit}>Save Sale</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleSubmit} disabled={saving}>
+              {saving ? 'Saving…' : 'Save Sale'}
+            </button>
           </div>
         </Modal>
       )}
 
       {invoiceModal && (
         <Modal title="Create Invoice" onClose={() => setInvoiceModal(null)}>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Set dates for invoice for sale #{invoiceModal.id}</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>Set dates for invoice linked to sale #{invoiceModal.id}</p>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Payment Due Date</label>
             <input className="sap-input" type="date" value={invForm.payment_due_date} onChange={e => setInvForm(f => ({ ...f, payment_due_date: e.target.value }))} />

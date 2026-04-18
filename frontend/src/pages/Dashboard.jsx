@@ -3,25 +3,27 @@ import { useNavigate } from 'react-router-dom'
 import { getDashboard, dismissPaymentAlert, dismissValidityAlert } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 
+const numStyle = {
+  fontSize: '28px', fontWeight: 800,
+  color: 'var(--text)', letterSpacing: '-0.03em', lineHeight: 1,
+}
+
 function StatCard({ label, value, accent, note }) {
   return (
     <div className="sap-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute', top: 0, right: 0, width: '3px', bottom: 0,
-        background: accent ? 'var(--amber)' : 'var(--border)',
-        borderRadius: '0 var(--r) var(--r) 0',
-      }} />
+      {accent && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+          background: 'var(--amber)',
+        }} />
+      )}
       <div className="sap-section-title" style={{ marginBottom: '10px' }}>{label}</div>
-      <div style={{
-        fontFamily: "'Playfair Display', serif",
-        fontSize: '28px', fontWeight: 700,
-        color: 'var(--text)', letterSpacing: '-0.03em', lineHeight: 1,
-      }}>
-        <span style={{ fontSize: '13px', fontFamily: 'inherit', fontWeight: 600, color: 'var(--text-muted)', marginRight: '4px' }}>PKR</span>
+      <div style={numStyle}>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', marginRight: '4px' }}>PKR</span>
         {Number(value || 0).toLocaleString()}
       </div>
       {note && (
-        <div style={{ marginTop: '8px', fontSize: '11.5px', fontWeight: 600, color: value >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+        <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: value >= 0 ? 'var(--success)' : 'var(--danger)' }}>
           {note}
         </div>
       )}
@@ -37,8 +39,8 @@ function AlertRow({ inv, onView, onDismiss, dateLabel, dateValue }) {
       padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.04)',
     }}>
       <div>
-        <span style={{ fontSize: '13px', fontWeight: 600 }}>{inv.invoice_number}</span>
-        <span style={{ marginLeft: '10px', fontSize: '11.5px', color: isPast ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 500 }}>
+        <span style={{ fontSize: '14px', fontWeight: 600 }}>{inv.invoice_number}</span>
+        <span style={{ marginLeft: '10px', fontSize: '13px', color: isPast ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 500 }}>
           {dateLabel}: {new Date(dateValue).toLocaleDateString()}{isPast ? ' · Overdue' : ''}
         </span>
       </div>
@@ -53,12 +55,12 @@ function AlertRow({ inv, onView, onDismiss, dateLabel, dateValue }) {
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const navigate = useNavigate()
-  const load = () => getDashboard().then(setData)
+  const load = () => getDashboard().then(setData).catch(() => {})
   useEffect(() => { load() }, [])
 
   if (!data) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '40vh' }}>
-      <div style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Loading…</div>
+      <div style={{ color: 'var(--text-faint)', fontSize: '14px' }}>Loading…</div>
     </div>
   )
 
@@ -66,7 +68,6 @@ export default function Dashboard() {
 
   return (
     <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
           <div className="sap-section-title" style={{ marginBottom: '4px' }}>
@@ -80,7 +81,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '14px' }}>
         <StatCard label="Today's Sales" value={data.today_sales} />
         <StatCard label="Month Sales" value={data.month_sales} />
@@ -89,21 +89,19 @@ export default function Dashboard() {
           note={data.net_profit >= 0 ? '▲ Profitable this month' : '▼ Loss this month'} />
       </div>
 
-      {/* Middle row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-        {/* Low stock */}
         <div className="sap-card" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
             <span className="sap-h2">Low Stock Alerts</span>
             {data.low_stock_products.length > 0 && <span className="sap-badge badge-danger">{data.low_stock_products.length}</span>}
           </div>
           {data.low_stock_products.length === 0
-            ? <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>All stock levels are healthy.</div>
+            ? <div style={{ color: 'var(--text-muted)', fontSize: '14px', padding: '12px 0' }}>All stock levels are healthy.</div>
             : data.low_stock_products.map(p => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
                 <div>
-                  <span style={{ fontWeight: 600, fontSize: '13px' }}>{p.name}</span>
-                  <span style={{ marginLeft: '6px', fontSize: '11.5px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{p.category}</span>
+                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{p.name}</span>
+                  <span style={{ marginLeft: '6px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{p.category}</span>
                 </div>
                 <StatusBadge status="low" label={`${p.current_stock} ${p.unit}`} />
               </div>
@@ -111,20 +109,19 @@ export default function Dashboard() {
           }
         </div>
 
-        {/* Creditors */}
         <div className="sap-card" style={{ padding: '20px 24px' }}>
           <div className="sap-h2" style={{ marginBottom: '14px' }}>Creditors Summary</div>
           <div style={{
-            fontFamily: "'Playfair Display', serif", fontSize: '32px', fontWeight: 700,
+            fontSize: '32px', fontWeight: 800,
             color: data.creditors_total_owed > 0 ? 'var(--danger)' : 'var(--success)',
             letterSpacing: '-0.03em', lineHeight: 1,
           }}>
-            <span style={{ fontSize: '14px', fontFamily: 'inherit', fontWeight: 600, marginRight: '4px', opacity: 0.7 }}>PKR</span>
+            <span style={{ fontSize: '15px', fontWeight: 600, marginRight: '4px', opacity: 0.7 }}>PKR</span>
             {Number(data.creditors_total_owed || 0).toLocaleString()}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>Total outstanding balance</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>Total outstanding balance</div>
           {data.creditors_overdue_count > 0 && (
-            <div style={{ marginTop: '10px', padding: '8px 12px', background: 'var(--danger-subtle)', borderRadius: 'var(--r-sm)', fontSize: '12px', fontWeight: 600, color: 'var(--danger)' }}>
+            <div style={{ marginTop: '10px', padding: '8px 12px', background: 'var(--danger-subtle)', borderRadius: 'var(--r-sm)', fontSize: '13px', fontWeight: 600, color: 'var(--danger)' }}>
               {data.creditors_overdue_count} creditor{data.creditors_overdue_count > 1 ? 's' : ''} overdue
             </div>
           )}
@@ -134,7 +131,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Invoice alerts */}
       {hasAlerts && (
         <div className="sap-card" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>

@@ -3,25 +3,29 @@ import { getPurchases, createPurchase, voidPurchase, getSuppliers, getProducts }
 import LineItemsTable from '../components/LineItemsTable'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import { useToast } from '../components/Toast'
+import { useConfirm } from '../components/Confirm'
 
 const today = () => new Date().toISOString().slice(0, 16)
 const EMPTY_ITEM = { product_id: '', quantity: 0, unit_price: 0 }
+const EMPTY_FORM = { date: today(), supplier_id: '', payment_type: 'cash', notes: '', due_date: '', items: [{ ...EMPTY_ITEM }] }
 
 export default function Purchases() {
   const [purchases, setPurchases] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [products, setProducts] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ date: today(), supplier_id: '', payment_type: 'cash', notes: '', due_date: '', items: [{ ...EMPTY_ITEM }] })
+  const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const toast = useToast()
+  const { prompt } = useConfirm()
 
   const load = () => getPurchases().then(setPurchases)
   useEffect(() => { load(); getSuppliers().then(setSuppliers); getProducts().then(setProducts) }, [])
 
   const handleItemChange = (idx, field, val) =>
     setForm(f => { const items = [...f.items]; items[idx] = { ...items[idx], [field]: val }; return { ...f, items } })
-  const handleAddItem = () => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))
-  const handleRemoveItem = (idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))
 
   const total = form.items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
 
@@ -30,27 +34,35 @@ export default function Purchases() {
     if (form.items.length === 0) return setError('Add at least one item')
     if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
     if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
+    if (form.items.some(i => i.unit_price <= 0)) return setError('All unit prices must be greater than 0')
     if (form.payment_type === 'credit' && !form.due_date) return setError('Please enter a due date for credit purchase')
     try {
-      setError('')
+      setError(''); setSaving(true)
       const payload = {
         ...form,
         supplier_id: parseInt(form.supplier_id),
         due_date: form.payment_type === 'credit' ? new Date(form.due_date).toISOString() : null,
         date: new Date(form.date).toISOString(),
-        items: form.items.map(i => ({ ...i, product_id: parseInt(i.product_id) }))
+        items: form.items.map(i => ({ ...i, product_id: parseInt(i.product_id), quantity: parseFloat(i.quantity), unit_price: parseFloat(i.unit_price) }))
       }
       await createPurchase(payload)
       await load()
       setShowForm(false)
-      setForm({ date: today(), supplier_id: '', payment_type: 'cash', notes: '', due_date: '', items: [{ ...EMPTY_ITEM }] })
-    } catch (e) { setError(e.response?.data?.detail || 'Failed to create purchase') }
+      setForm({ ...EMPTY_FORM, date: today() })
+      toast('Purchase recorded successfully')
+    } catch (e) {
+      setError(e.response?.data?.detail || 'Failed to create purchase')
+    } finally { setSaving(false) }
   }
 
   const handleVoid = async (id) => {
-    const reason = prompt('Reason for voiding?')
+    const reason = await prompt('Enter reason for voiding this purchase:')
     if (!reason) return
-    await voidPurchase(id, reason); load()
+    try {
+      await voidPurchase(id, reason)
+      load()
+      toast('Purchase voided')
+    } catch (e) { toast(e.response?.data?.detail || 'Failed to void purchase', 'error') }
   }
 
   return (
@@ -90,9 +102,11 @@ export default function Purchases() {
             )}
           </div>
           <LineItemsTable items={form.items} products={products}
-            onChange={handleItemChange} onAdd={handleAddItem} onRemove={handleRemoveItem} />
-          <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '14px' }}>
-            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toFixed(2)}</span>
+            onChange={handleItemChange}
+            onAdd={() => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))}
+            onRemove={(idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} />
+          <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '15px' }}>
+            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toLocaleString()}</span>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Notes</label>
@@ -100,7 +114,9 @@ export default function Purchases() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
             <button className="sap-btn sap-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-            <button className="sap-btn sap-btn-primary" onClick={handleSubmit}>Save Purchase</button>
+            <button className="sap-btn sap-btn-primary" onClick={handleSubmit} disabled={saving}>
+              {saving ? 'Saving…' : 'Save Purchase'}
+            </button>
           </div>
         </Modal>
       )}
