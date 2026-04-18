@@ -69,6 +69,6 @@ def get_invoice_pdf(invoice_id: int, db: Session = Depends(get_db)):
     if not inv: raise HTTPException(404, "Invoice not found")
     # pdf_generator imported here to avoid WeasyPrint import errors during testing
     from pdf_generator import generate_invoice_pdf
-    pdf_bytes = generate_invoice_pdf(inv)
+    pdf_bytes = generate_invoice_pdf(inv, db)
     return Response(content=pdf_bytes, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename={inv.invoice_number}.pdf"})
