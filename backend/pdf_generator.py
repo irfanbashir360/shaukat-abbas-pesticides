@@ -1,18 +1,38 @@
 # backend/pdf_generator.py
 import os
-import base64
-from weasyprint import HTML
+import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph,
+    Spacer, HRFlowable
+)
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from database import get_data_dir
 from models import BusinessSettings
 
+# ── Palette ──────────────────────────────────────────────────────────────────
+C_DARK   = colors.HexColor("#1e293b")   # slate-800  – header/footer bg
+C_ACCENT = colors.HexColor("#2563eb")   # blue-600   – table header, totals
+C_LIGHT  = colors.HexColor("#eff6ff")   # blue-50    – alt row tint
+C_BORDER = colors.HexColor("#e2e8f0")   # slate-200  – dividers
+C_MUTED  = colors.HexColor("#64748b")   # slate-500  – label text
+C_WHITE  = colors.white
+C_TEXT   = colors.HexColor("#0f172a")   # slate-900  – body text
+
 
 def _safe(value, fallback=""):
-    """Return value if truthy, else fallback."""
     return value if value else fallback
 
 
+def _para(text, style):
+    return Paragraph(str(text), style)
+
+
 def generate_invoice_pdf(invoice, db) -> bytes:
-    # ── Business settings ────────────────────────────────────────────────────
+    # ── Business settings ─────────────────────────────────────────────────────
     biz = db.query(BusinessSettings).first()
     if biz is None:
         class _Biz:
@@ -29,280 +49,276 @@ def generate_invoice_pdf(invoice, db) -> bytes:
             logo_filename = None
         biz = _Biz()
 
-    # ── Logo ─────────────────────────────────────────────────────────────────
-    logo_html = ""
+    # ── Styles ────────────────────────────────────────────────────────────────
+    s_biz_name = ParagraphStyle("bizName",
+        fontName="Helvetica-Bold", fontSize=18,
+        textColor=C_WHITE, leading=22)
+    s_tagline = ParagraphStyle("tagline",
+        fontName="Helvetica", fontSize=9,
+        textColor=colors.HexColor("#93c5fd"), leading=13)
+    s_header_right = ParagraphStyle("hdrRight",
+        fontName="Helvetica", fontSize=9,
+        textColor=colors.HexColor("#cbd5e1"), leading=14, alignment=TA_RIGHT)
+    s_section_title = ParagraphStyle("secTitle",
+        fontName="Helvetica-Bold", fontSize=8,
+        textColor=C_MUTED, leading=12,
+        spaceAfter=4, textTransform="uppercase", letterSpacing=1)
+    s_body = ParagraphStyle("body",
+        fontName="Helvetica", fontSize=10,
+        textColor=C_TEXT, leading=15)
+    s_body_bold = ParagraphStyle("bodyBold",
+        fontName="Helvetica-Bold", fontSize=11,
+        textColor=C_TEXT, leading=15)
+    s_label = ParagraphStyle("label",
+        fontName="Helvetica", fontSize=9,
+        textColor=C_MUTED, leading=13)
+    s_invoice_num = ParagraphStyle("invNum",
+        fontName="Helvetica-Bold", fontSize=15,
+        textColor=C_ACCENT, leading=20)
+    s_th = ParagraphStyle("th",
+        fontName="Helvetica-Bold", fontSize=9,
+        textColor=C_WHITE, leading=12)
+    s_td = ParagraphStyle("td",
+        fontName="Helvetica", fontSize=9,
+        textColor=C_TEXT, leading=13)
+    s_td_right = ParagraphStyle("tdRight",
+        fontName="Helvetica", fontSize=9,
+        textColor=C_TEXT, leading=13, alignment=TA_RIGHT)
+    s_td_center = ParagraphStyle("tdCenter",
+        fontName="Helvetica", fontSize=9,
+        textColor=C_TEXT, leading=13, alignment=TA_CENTER)
+    s_total_label = ParagraphStyle("totLabel",
+        fontName="Helvetica-Bold", fontSize=11,
+        textColor=C_MUTED, leading=16, alignment=TA_RIGHT)
+    s_total_value = ParagraphStyle("totVal",
+        fontName="Helvetica-Bold", fontSize=14,
+        textColor=C_ACCENT, leading=20, alignment=TA_RIGHT)
+    s_footer = ParagraphStyle("footer",
+        fontName="Helvetica", fontSize=9,
+        textColor=colors.HexColor("#cbd5e1"), leading=14)
+    s_footer_italic = ParagraphStyle("footerItalic",
+        fontName="Helvetica-Oblique", fontSize=9,
+        textColor=colors.HexColor("#93c5fd"), leading=14, alignment=TA_RIGHT)
+
+    # ── Invoice data ──────────────────────────────────────────────────────────
+    sale     = invoice.sale
+    customer = sale.customer
+    issued   = invoice.issued_date.strftime("%d %b %Y")
+    due      = invoice.payment_due_date.strftime("%d %b %Y")
+    valid_until = invoice.validity_expiry_date.strftime("%d %b %Y")
+
+    # ── Page setup ────────────────────────────────────────────────────────────
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+        topMargin=1.5*cm, bottomMargin=1.5*cm,
+    )
+    W = A4[0] - 3*cm   # usable width
+    story = []
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HEADER BAND
+    # ═══════════════════════════════════════════════════════════════════════════
+    biz_name_str = _safe(biz.business_name, "Shaukat Abbas Pesticides")
+    left_cells = [_para(biz_name_str, s_biz_name)]
+    if biz.tagline:
+        left_cells.append(_para(biz.tagline, s_tagline))
+
+    right_lines = []
+    if biz.address:
+        right_lines.append(biz.address)
+    if biz.phone:
+        right_lines.append(biz.phone)
+    ntn_parts = []
+    if biz.ntn:  ntn_parts.append(f"NTN: {biz.ntn}")
+    if biz.strn: ntn_parts.append(f"STRN: {biz.strn}")
+    if ntn_parts:
+        right_lines.append("  |  ".join(ntn_parts))
+    right_content = _para("<br/>".join(right_lines), s_header_right) if right_lines else _para("", s_header_right)
+
+    # Try to load logo
+    logo_image = None
     if biz.logo_filename:
         logo_path = os.path.join(get_data_dir(), "logo.png")
         if os.path.exists(logo_path):
-            with open(logo_path, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode()
-            logo_html = (
-                f'<img src="data:image/png;base64,{b64}" '
-                f'style="height:60px;max-width:140px;object-fit:contain;" />'
-            )
+            from reportlab.platypus import Image
+            logo_image = Image(logo_path, width=2.5*cm, height=1.6*cm, kind="proportional")
 
-    # ── Invoice data ─────────────────────────────────────────────────────────
-    sale = invoice.sale
-    customer = sale.customer
+    if logo_image:
+        left_content = Table(
+            [[logo_image, [_para(biz_name_str, s_biz_name)] + ([_para(biz.tagline, s_tagline)] if biz.tagline else [])]],
+            colWidths=[2.8*cm, None]
+        )
+        left_content.setStyle(TableStyle([
+            ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+            ("LEFTPADDING", (0,0), (-1,-1), 0),
+            ("RIGHTPADDING", (0,0), (-1,-1), 8),
+        ]))
+    else:
+        left_content = Table([[c] for c in left_cells], colWidths=[W * 0.6])
+        left_content.setStyle(TableStyle([
+            ("LEFTPADDING", (0,0), (-1,-1), 0),
+            ("TOPPADDING", (0,0), (-1,-1), 1),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 1),
+        ]))
 
-    issued = invoice.issued_date.strftime("%d %b %Y")
-    due = invoice.payment_due_date.strftime("%d %b %Y")
-    valid_until = invoice.validity_expiry_date.strftime("%d %b %Y")
+    header_table = Table(
+        [[left_content, right_content]],
+        colWidths=[W * 0.6, W * 0.4],
+    )
+    header_table.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,-1), C_DARK),
+        ("TOPPADDING",    (0,0), (-1,-1), 14),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 14),
+        ("LEFTPADDING",   (0,0), (-1,-1), 16),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 16),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("ROUNDEDCORNERS", [6,6,0,0]),
+    ]))
+    story.append(header_table)
 
-    # ── Line items ────────────────────────────────────────────────────────────
-    rows = ""
+    # ═══════════════════════════════════════════════════════════════════════════
+    # INFO BLOCK  (Bill To | Invoice Details)
+    # ═══════════════════════════════════════════════════════════════════════════
+    bill_to = [
+        _para("Bill To", s_section_title),
+        _para(customer.name, s_body_bold),
+    ]
+    if customer.phone:
+        bill_to.append(_para(f"Phone: {customer.phone}", s_label))
+    if customer.address:
+        bill_to.append(_para(f"Address: {customer.address}", s_label))
+
+    inv_details = [
+        _para("Invoice Details", s_section_title),
+        _para(invoice.invoice_number, s_invoice_num),
+        _para(f"Issued: {issued}", s_label),
+        _para(f"Payment Due: {due}", s_label),
+        _para(f"Valid Until: {valid_until}", s_label),
+    ]
+
+    info_table = Table(
+        [[bill_to, inv_details]],
+        colWidths=[W * 0.5, W * 0.5],
+    )
+    info_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), C_WHITE),
+        ("TOPPADDING",    (0,0), (-1,-1), 14),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 14),
+        ("LEFTPADDING",   (0,0), (-1,-1), 16),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 16),
+        ("VALIGN",        (0,0), (-1,-1), "TOP"),
+        ("LINEBELOW",     (0,0), (-1,-1), 1.2, C_BORDER),
+        ("LINEAFTER",     (0,0), (0,-1), 1,   C_BORDER),
+        ("BOX",           (0,0), (-1,-1), 1,   C_BORDER),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # LINE ITEMS TABLE
+    # ═══════════════════════════════════════════════════════════════════════════
+    col_widths = [
+        W * 0.05,   # #
+        W * 0.30,   # Product
+        W * 0.18,   # Category
+        W * 0.13,   # Qty
+        W * 0.17,   # Unit Price
+        W * 0.17,   # Total
+    ]
+    headers = [
+        _para("#",          s_th),
+        _para("Product",    s_th),
+        _para("Category",   s_th),
+        _para("Qty",        s_th),
+        _para("Unit Price", s_th),
+        _para("Total",      s_th),
+    ]
+    rows = [headers]
     for idx, item in enumerate(sale.items, start=1):
-        bg = "#ffffff" if idx % 2 == 1 else "#f0fdf4"
         line_total = item.quantity * item.unit_price
-        rows += f"""
-        <tr style="background:{bg};">
-            <td style="text-align:center;">{idx}</td>
-            <td>{item.product.name}</td>
-            <td>{item.product.category.value.title()}</td>
-            <td style="text-align:center;">{item.quantity} {item.product.unit}</td>
-            <td style="text-align:right;">PKR {item.unit_price:,.2f}</td>
-            <td style="text-align:right;">PKR {line_total:,.2f}</td>
-        </tr>"""
+        bg = C_LIGHT if idx % 2 == 0 else C_WHITE
+        rows.append([
+            _para(str(idx),                                  s_td_center),
+            _para(item.product.name,                         s_td),
+            _para(item.product.category.value.title(),       s_td),
+            _para(f"{item.quantity} {item.product.unit}",    s_td_center),
+            _para(f"PKR {item.unit_price:,.2f}",             s_td_right),
+            _para(f"PKR {line_total:,.2f}",                  s_td_right),
+        ])
 
-    # ── Bank / footer info ────────────────────────────────────────────────────
+    items_table = Table(rows, colWidths=col_widths, repeatRows=1)
+    style_cmds = [
+        # Header row
+        ("BACKGROUND",    (0,0), (-1,0),  C_ACCENT),
+        ("TOPPADDING",    (0,0), (-1,0),  8),
+        ("BOTTOMPADDING", (0,0), (-1,0),  8),
+        # Data rows
+        ("TOPPADDING",    (0,1), (-1,-1), 7),
+        ("BOTTOMPADDING", (0,1), (-1,-1), 7),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("LINEBELOW",     (0,1), (-1,-1), 0.5, C_BORDER),
+        ("BOX",           (0,0), (-1,-1), 1,   C_BORDER),
+        ("LEFTPADDING",   (0,0), (-1,-1), 8),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 8),
+    ]
+    # Alternating row backgrounds
+    for i in range(1, len(rows)):
+        if i % 2 == 0:
+            style_cmds.append(("BACKGROUND", (0,i), (-1,i), C_LIGHT))
+    items_table.setStyle(TableStyle(style_cmds))
+    story.append(items_table)
+    story.append(Spacer(1, 0.5*cm))
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # GRAND TOTAL
+    # ═══════════════════════════════════════════════════════════════════════════
+    total_table = Table(
+        [[_para("Grand Total", s_total_label), _para(f"PKR {sale.total_amount:,.2f}", s_total_value)]],
+        colWidths=[W * 0.75, W * 0.25],
+    )
+    total_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), C_LIGHT),
+        ("TOPPADDING",    (0,0), (-1,-1), 10),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 10),
+        ("LEFTPADDING",   (0,0), (-1,-1), 16),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 16),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("BOX",           (0,0), (-1,-1), 1.5, C_ACCENT),
+        ("ROUNDEDCORNERS", [4,4,4,4]),
+    ]))
+    story.append(total_table)
+    story.append(Spacer(1, 0.5*cm))
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # FOOTER BAND
+    # ═══════════════════════════════════════════════════════════════════════════
     bank_parts = []
-    if biz.bank_name:
-        bank_parts.append(f"<strong>Bank:</strong> {biz.bank_name}")
-    if biz.bank_account:
-        bank_parts.append(f"<strong>Account:</strong> {biz.bank_account}")
-    if biz.bank_iban:
-        bank_parts.append(f"<strong>IBAN:</strong> {biz.bank_iban}")
-    bank_info = " &nbsp;|&nbsp; ".join(bank_parts) if bank_parts else ""
+    if biz.bank_name:    bank_parts.append(f"Bank: {biz.bank_name}")
+    if biz.bank_account: bank_parts.append(f"Account: {biz.bank_account}")
+    if biz.bank_iban:    bank_parts.append(f"IBAN: {biz.bank_iban}")
+    bank_str = "   |   ".join(bank_parts) if bank_parts else ""
 
     footer_note = _safe(biz.footer_note, "Thank you for your business!")
+    footer_left  = _para(bank_str, s_footer)
+    footer_right = _para(footer_note, s_footer_italic)
 
-    # ── NTN / STRN line ───────────────────────────────────────────────────────
-    ntn_parts = []
-    if biz.ntn:
-        ntn_parts.append(f"NTN: {biz.ntn}")
-    if biz.strn:
-        ntn_parts.append(f"STRN: {biz.strn}")
-    ntn_line = " &nbsp;|&nbsp; ".join(ntn_parts)
+    footer_table = Table(
+        [[footer_left, footer_right]],
+        colWidths=[W * 0.6, W * 0.4],
+    )
+    footer_table.setStyle(TableStyle([
+        ("BACKGROUND",    (0,0), (-1,-1), C_DARK),
+        ("TOPPADDING",    (0,0), (-1,-1), 12),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 12),
+        ("LEFTPADDING",   (0,0), (-1,-1), 16),
+        ("RIGHTPADDING",  (0,0), (-1,-1), 16),
+        ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
+        ("ROUNDEDCORNERS", [0,0,6,6]),
+    ]))
+    story.append(footer_table)
 
-    html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 12px;
-    color: #052e16;
-    background: #ffffff;
-  }}
-
-  /* ── Header band ── */
-  .header-band {{
-    background: #0a1f14;
-    color: #ffffff;
-    padding: 18px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }}
-  .header-left {{
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }}
-  .header-left .biz-name {{
-    font-size: 20px;
-    font-weight: bold;
-    color: #ffffff;
-    line-height: 1.2;
-  }}
-  .header-left .tagline {{
-    font-size: 11px;
-    color: #86efac;
-    margin-top: 2px;
-  }}
-  .header-right {{
-    text-align: right;
-    font-size: 11px;
-    color: #d1fae5;
-    line-height: 1.7;
-  }}
-
-  /* ── Two-column info block ── */
-  .info-block {{
-    display: flex;
-    border-bottom: 2px solid #d1fae5;
-  }}
-  .info-col {{
-    flex: 1;
-    padding: 16px 24px;
-    border-right: 1px solid #d1fae5;
-  }}
-  .info-col:last-child {{ border-right: none; }}
-  .info-col h3 {{
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #4b7a5e;
-    margin-bottom: 8px;
-    border-bottom: 1px solid #d1fae5;
-    padding-bottom: 4px;
-  }}
-  .info-col p {{
-    line-height: 1.7;
-    color: #052e16;
-  }}
-  .info-col .label {{
-    color: #4b7a5e;
-    font-size: 11px;
-  }}
-  .invoice-number {{
-    font-size: 16px;
-    font-weight: bold;
-    color: #16a34a;
-  }}
-
-  /* ── Items table ── */
-  .table-wrapper {{
-    padding: 0 24px 16px;
-  }}
-  table {{
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 16px;
-    border: 1px solid #d1fae5;
-  }}
-  thead tr {{
-    background: #16a34a;
-    color: #ffffff;
-  }}
-  thead th {{
-    padding: 9px 10px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.03em;
-  }}
-  thead th.num {{ text-align: center; width: 36px; }}
-  thead th.right {{ text-align: right; }}
-  tbody td {{
-    padding: 8px 10px;
-    border-bottom: 1px solid #d1fae5;
-    color: #052e16;
-  }}
-
-  /* ── Total box ── */
-  .total-box {{
-    margin: 0 24px 20px;
-    text-align: right;
-  }}
-  .total-inner {{
-    display: inline-block;
-    background: #f0fdf4;
-    border: 2px solid #16a34a;
-    border-radius: 4px;
-    padding: 10px 20px;
-    font-size: 15px;
-    font-weight: bold;
-    color: #052e16;
-  }}
-  .total-inner span {{
-    color: #16a34a;
-    font-size: 17px;
-  }}
-
-  /* ── Footer band ── */
-  .footer-band {{
-    background: #0a1f14;
-    color: #d1fae5;
-    padding: 14px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    margin-top: 12px;
-  }}
-  .footer-band .bank-info {{
-    color: #86efac;
-    line-height: 1.7;
-  }}
-  .footer-band .footer-note {{
-    color: #d1fae5;
-    font-style: italic;
-    text-align: right;
-    max-width: 220px;
-  }}
-</style>
-</head>
-<body>
-
-<!-- ═══ Header Band ═══ -->
-<div class="header-band">
-  <div class="header-left">
-    {logo_html}
-    <div>
-      <div class="biz-name">{_safe(biz.business_name, "Shaukat Abbas Pesticides")}</div>
-      {f'<div class="tagline">{biz.tagline}</div>' if biz.tagline else ""}
-    </div>
-  </div>
-  <div class="header-right">
-    {f'<div>{biz.address}</div>' if biz.address else ""}
-    {f'<div>{biz.phone}</div>' if biz.phone else ""}
-    {f'<div>{ntn_line}</div>' if ntn_line else ""}
-  </div>
-</div>
-
-<!-- ═══ Two-column info block ═══ -->
-<div class="info-block">
-  <div class="info-col">
-    <h3>Bill To</h3>
-    <p style="font-weight:bold;font-size:13px;">{customer.name}</p>
-    {f'<p><span class="label">Phone:</span> {customer.phone}</p>' if customer.phone else ""}
-    {f'<p><span class="label">Address:</span> {customer.address}</p>' if customer.address else ""}
-  </div>
-  <div class="info-col">
-    <h3>Invoice Details</h3>
-    <p class="invoice-number">{invoice.invoice_number}</p>
-    <p><span class="label">Issued:</span> {issued}</p>
-    <p><span class="label">Payment Due:</span> {due}</p>
-    <p><span class="label">Valid Until:</span> {valid_until}</p>
-  </div>
-</div>
-
-<!-- ═══ Line Items Table ═══ -->
-<div class="table-wrapper">
-  <table>
-    <thead>
-      <tr>
-        <th class="num">#</th>
-        <th>Product</th>
-        <th>Category</th>
-        <th style="text-align:center;">Qty</th>
-        <th class="right">Unit Price</th>
-        <th class="right">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {rows}
-    </tbody>
-  </table>
-</div>
-
-<!-- ═══ Grand Total ═══ -->
-<div class="total-box">
-  <div class="total-inner">
-    Grand Total: <span>PKR {sale.total_amount:,.2f}</span>
-  </div>
-</div>
-
-<!-- ═══ Footer Band ═══ -->
-<div class="footer-band">
-  <div class="bank-info">{bank_info}</div>
-  <div class="footer-note">{footer_note}</div>
-</div>
-
-</body>
-</html>"""
-
-    return HTML(string=html).write_pdf()
+    # ── Build ─────────────────────────────────────────────────────────────────
+    doc.build(story)
+    return buf.getvalue()

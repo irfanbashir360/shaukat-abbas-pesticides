@@ -1,17 +1,17 @@
 const th = {
   padding: '9px 12px', fontSize: '12px', fontWeight: 700,
   textTransform: 'uppercase', letterSpacing: '0.06em',
-  color: '#7b8d84', background: '#faf8f4',
-  borderBottom: '1.5px solid #e6e0d5', textAlign: 'left',
+  color: '#64748b', background: '#f8fafc',
+  borderBottom: '1.5px solid #e2e8f0', textAlign: 'left',
 }
 const td = {
   padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.05)',
-  fontSize: '14px', color: '#18251f', verticalAlign: 'middle',
+  fontSize: '14px', color: '#0f172a', verticalAlign: 'middle',
 }
 
 export default function LineItemsTable({ items, products, onChange, onAdd, onRemove }) {
   return (
-    <div style={{ border: '1.5px solid #e6e0d5', borderRadius: '10px', overflow: 'hidden', marginBottom: '4px' }}>
+    <div style={{ border: '1.5px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', marginBottom: '4px' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
@@ -29,8 +29,8 @@ export default function LineItemsTable({ items, products, onChange, onAdd, onRem
                 <select
                   style={{
                     width: '100%', padding: '7px 10px',
-                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
-                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    border: '1.5px solid #e2e8f0', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#0f172a',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                   value={item.product_id}
@@ -47,8 +47,8 @@ export default function LineItemsTable({ items, products, onChange, onAdd, onRem
                   type="number" min="0" step="0.01"
                   style={{
                     width: '100%', padding: '7px 10px',
-                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
-                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    border: '1.5px solid #e2e8f0', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#0f172a',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                   value={item.quantity}
@@ -60,15 +60,15 @@ export default function LineItemsTable({ items, products, onChange, onAdd, onRem
                   type="number" min="0" step="0.01"
                   style={{
                     width: '100%', padding: '7px 10px',
-                    border: '1.5px solid #e6e0d5', borderRadius: '7px',
-                    fontSize: '14px', background: '#fff', color: '#18251f',
+                    border: '1.5px solid #e2e8f0', borderRadius: '7px',
+                    fontSize: '14px', background: '#fff', color: '#0f172a',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                   value={item.unit_price}
                   onChange={e => onChange(idx, 'unit_price', parseFloat(e.target.value) || 0)}
                 />
               </td>
-              <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: '#c8821a' }}>
+              <td style={{ ...td, textAlign: 'right', fontWeight: 600, color: '#2563eb' }}>
                 PKR {(item.quantity * item.unit_price).toFixed(0)}
               </td>
               <td style={{ ...td, textAlign: 'center', padding: '10px 8px' }}>
@@ -76,8 +76,8 @@ export default function LineItemsTable({ items, products, onChange, onAdd, onRem
                   onClick={() => onRemove(idx)}
                   style={{
                     width: '24px', height: '24px', borderRadius: '50%',
-                    border: 'none', background: 'rgba(192,53,48,0.1)',
-                    color: '#c03530', cursor: 'pointer', fontSize: '16px',
+                    border: 'none', background: 'rgba(220,38,38,0.1)',
+                    color: '#dc2626', cursor: 'pointer', fontSize: '16px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     lineHeight: 1, fontWeight: 700,
                   }}
@@ -87,12 +87,12 @@ export default function LineItemsTable({ items, products, onChange, onAdd, onRem
           ))}
         </tbody>
       </table>
-      <div style={{ padding: '10px 12px', background: '#fafafa', borderTop: '1px solid #e6e0d5' }}>
+      <div style={{ padding: '10px 12px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
         <button
           onClick={onAdd}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '13px', fontWeight: 600, color: '#1d7a4d',
+            fontSize: '13px', fontWeight: 600, color: '#2563eb',
             padding: 0, fontFamily: 'inherit',
           }}
         >

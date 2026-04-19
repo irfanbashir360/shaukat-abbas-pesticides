@@ -106,7 +106,7 @@ export default function Purchases() {
             onAdd={() => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))}
             onRemove={(idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} />
           <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '15px' }}>
-            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toLocaleString()}</span>
+            Total: <span style={{ color: 'var(--sky)' }}>PKR {total.toLocaleString()}</span>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Notes</label>

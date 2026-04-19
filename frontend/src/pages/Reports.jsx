@@ -91,7 +91,7 @@ export default function Reports() {
               ))}
               <tr style={{ background: '#faf8f4', fontWeight: 700 }}>
                 <td colSpan={5} style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>Grand Total</td>
-                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--amber)', fontSize: '15px' }}>PKR {grandTotal.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--sky)', fontSize: '15px' }}>PKR {grandTotal.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
@@ -112,7 +112,7 @@ export default function Reports() {
               ))}
               <tr style={{ background: '#faf8f4' }}>
                 <td colSpan={2} style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: 700 }}>Grand Total</td>
-                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--amber)', fontWeight: 700, fontSize: '15px' }}>PKR {grandTotal.toLocaleString()}</td>
+                <td style={{ textAlign: 'right', padding: '12px 16px', color: 'var(--sky)', fontWeight: 700, fontSize: '15px' }}>PKR {grandTotal.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>

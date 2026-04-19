@@ -16,7 +16,7 @@ const TABS = [
 
 const tabBarStyle = {
   display: 'flex',
-  borderBottom: '2px solid #d1fae5',
+  borderBottom: '2px solid #e2e8f0',
   marginBottom: '28px',
   gap: '4px',
 }
@@ -29,8 +29,8 @@ function tabStyle(active) {
     cursor: 'pointer',
     fontWeight: 600,
     fontSize: '14.5px',
-    color: active ? '#052e16' : '#4b7a5e',
-    borderBottom: active ? '2px solid #16a34a' : '2px solid transparent',
+    color: active ? '#0f172a' : '#64748b',
+    borderBottom: active ? '2px solid #2563eb' : '2px solid transparent',
     marginBottom: '-2px',
     transition: 'color 0.15s',
   }
@@ -51,8 +51,6 @@ export default function Settings() {
   const loadUnits = () => getUnits().then(setUnits)
 
   useEffect(() => { loadSettings(); loadUnits() }, [])
-
-  // ── Tab 1: Business Info ──────────────────────────────────────────────────
 
   const handleLogoChange = async (e) => {
     const file = e.target.files[0]
@@ -102,8 +100,6 @@ export default function Settings() {
     }
   }
 
-  // ── Tab 2: Invoice Alerts ─────────────────────────────────────────────────
-
   const saveAlerts = async () => {
     try {
       await updateSettings({
@@ -115,8 +111,6 @@ export default function Settings() {
       toast('Save failed', 'error')
     }
   }
-
-  // ── Tab 3: Units ──────────────────────────────────────────────────────────
 
   const handleAddUnit = async () => {
     const name = newUnit.trim()
@@ -142,8 +136,6 @@ export default function Settings() {
     }
   }
 
-  // ── Tab 4: Backup ─────────────────────────────────────────────────────────
-
   const handleRestore = async () => {
     if (!restoreFile) { toast('Select a .zip backup file first', 'error'); return }
     const ok = window.confirm('This will replace ALL current data and cannot be undone. Are you sure?')
@@ -160,9 +152,7 @@ export default function Settings() {
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
-  if (!settings) return <div style={{ padding: '40px', color: '#4b7a5e' }}>Loading…</div>
+  if (!settings) return <div style={{ padding: '40px', color: '#64748b' }}>Loading…</div>
 
   const field = (label, key, type = 'text', hint = null) => (
     <div style={{ marginBottom: '18px' }}>
@@ -173,7 +163,7 @@ export default function Settings() {
         value={settings[key] ?? ''}
         onChange={e => setSettings(s => ({ ...s, [key]: e.target.value }))}
       />
-      {hint && <div style={{ fontSize: '11.5px', color: '#4b7a5e', marginTop: '5px' }}>{hint}</div>}
+      {hint && <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '5px' }}>{hint}</div>}
     </div>
   )
 
@@ -181,7 +171,6 @@ export default function Settings() {
     <div className="sap-page">
       <h1 className="sap-h1">Settings</h1>
 
-      {/* Tab bar */}
       <div style={tabBarStyle}>
         {TABS.map(t => (
           <button
@@ -194,12 +183,10 @@ export default function Settings() {
         ))}
       </div>
 
-      {/* ── Tab 1: Business Info ─────────────────────────────────────────── */}
       {activeTab === 'business' && (
         <div className="sap-card" style={{ padding: '28px', maxWidth: '640px' }}>
           <div className="sap-h2" style={{ marginBottom: '22px' }}>Business Info</div>
 
-          {/* Logo */}
           <div style={{ marginBottom: '24px' }}>
             <label className="sap-label">Business Logo</label>
             {settings.logo_filename && (
@@ -211,7 +198,7 @@ export default function Settings() {
                     height: '72px',
                     maxWidth: '200px',
                     objectFit: 'contain',
-                    border: '1px solid #d1fae5',
+                    border: '1px solid #e2e8f0',
                     borderRadius: '8px',
                     padding: '6px',
                     background: '#fff',
@@ -232,14 +219,13 @@ export default function Settings() {
               type="file"
               accept="image/*"
               onChange={handleLogoChange}
-              style={{ display: 'block', marginTop: '8px', fontSize: '13.5px', color: '#052e16' }}
+              style={{ display: 'block', marginTop: '8px', fontSize: '13.5px', color: '#0f172a' }}
             />
-            <div style={{ fontSize: '11.5px', color: '#4b7a5e', marginTop: '5px' }}>
+            <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '5px' }}>
               Recommended: PNG or SVG, transparent background
             </div>
           </div>
 
-          {/* Two-column grid for most fields */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
             {field('Business Name', 'business_name')}
             {field('Tagline', 'tagline')}
@@ -252,7 +238,6 @@ export default function Settings() {
             {field('IBAN', 'iban')}
           </div>
 
-          {/* Full-width fields */}
           {field('Address', 'address')}
 
           <div style={{ marginBottom: '18px' }}>
@@ -272,7 +257,6 @@ export default function Settings() {
         </div>
       )}
 
-      {/* ── Tab 2: Invoice Alerts ────────────────────────────────────────── */}
       {activeTab === 'alerts' && (
         <div className="sap-card" style={{ padding: '28px', maxWidth: '480px' }}>
           <div className="sap-h2" style={{ marginBottom: '22px' }}>Invoice Alert Thresholds</div>
@@ -287,7 +271,7 @@ export default function Settings() {
               value={settings.payment_due_alert_days ?? 3}
               onChange={e => setSettings(s => ({ ...s, payment_due_alert_days: parseInt(e.target.value) || 1 }))}
             />
-            <div style={{ fontSize: '11.5px', color: '#4b7a5e', marginTop: '5px' }}>
+            <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '5px' }}>
               Alert will appear on dashboard this many days before payment is due
             </div>
           </div>
@@ -302,7 +286,7 @@ export default function Settings() {
               value={settings.validity_expiry_alert_days ?? 7}
               onChange={e => setSettings(s => ({ ...s, validity_expiry_alert_days: parseInt(e.target.value) || 1 }))}
             />
-            <div style={{ fontSize: '11.5px', color: '#4b7a5e', marginTop: '5px' }}>
+            <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '5px' }}>
               Alert will appear on dashboard this many days before invoice expires
             </div>
           </div>
@@ -313,12 +297,10 @@ export default function Settings() {
         </div>
       )}
 
-      {/* ── Tab 3: Units ─────────────────────────────────────────────────── */}
       {activeTab === 'units' && (
         <div className="sap-card" style={{ padding: '28px', maxWidth: '560px' }}>
           <div className="sap-h2" style={{ marginBottom: '22px' }}>Measurement Units</div>
 
-          {/* Add unit row */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
             <input
               className="sap-input"
@@ -337,9 +319,8 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Pills */}
           {units.length === 0 ? (
-            <div style={{ color: '#4b7a5e', fontSize: '14px' }}>No units yet.</div>
+            <div style={{ color: '#64748b', fontSize: '14px' }}>No units yet.</div>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
               {units.map(u => (
@@ -349,13 +330,13 @@ export default function Settings() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    background: '#f0fdf4',
-                    border: '1px solid #d1fae5',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
                     borderRadius: '999px',
                     padding: '6px 14px 6px 16px',
                     fontSize: '13.5px',
                     fontWeight: 500,
-                    color: '#052e16',
+                    color: '#1e40af',
                   }}
                 >
                   {u.name}
@@ -369,7 +350,7 @@ export default function Settings() {
                       padding: '0 2px',
                       lineHeight: 1,
                       fontSize: '15px',
-                      color: '#4b7a5e',
+                      color: '#64748b',
                       fontWeight: 700,
                     }}
                   >
@@ -382,14 +363,11 @@ export default function Settings() {
         </div>
       )}
 
-      {/* ── Tab 4: Backup ────────────────────────────────────────────────── */}
       {activeTab === 'backup' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '540px' }}>
-
-          {/* Export */}
           <div className="sap-card" style={{ padding: '28px' }}>
             <div className="sap-h2" style={{ marginBottom: '10px' }}>Export Backup</div>
-            <p style={{ fontSize: '14px', color: '#4b7a5e', marginBottom: '20px', margin: '0 0 20px' }}>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px', margin: '0 0 20px' }}>
               Download a full backup of all data as a .zip file.
             </p>
             <button
@@ -401,7 +379,6 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Restore */}
           <div className="sap-card" style={{ padding: '28px' }}>
             <div className="sap-h2" style={{ marginBottom: '10px' }}>Restore Backup</div>
             <p style={{ fontSize: '14px', color: '#dc2626', marginBottom: '20px', margin: '0 0 20px' }}>
@@ -410,8 +387,8 @@ export default function Settings() {
 
             {restored ? (
               <div style={{
-                background: '#f0fdf4',
-                border: '1px solid #d1fae5',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
                 borderRadius: '10px',
                 padding: '18px 20px',
                 display: 'flex',
@@ -419,7 +396,7 @@ export default function Settings() {
                 gap: '16px',
                 flexWrap: 'wrap',
               }}>
-                <span style={{ color: '#052e16', fontWeight: 500, fontSize: '14px' }}>
+                <span style={{ color: '#0f172a', fontWeight: 500, fontSize: '14px' }}>
                   Backup restored. Please refresh.
                 </span>
                 <button
@@ -436,7 +413,7 @@ export default function Settings() {
                     type="file"
                     accept=".zip"
                     onChange={e => setRestoreFile(e.target.files[0] || null)}
-                    style={{ display: 'block', fontSize: '13.5px', color: '#052e16' }}
+                    style={{ display: 'block', fontSize: '13.5px', color: '#0f172a' }}
                   />
                 </div>
                 <button
@@ -445,7 +422,7 @@ export default function Settings() {
                   disabled={restoring}
                   style={{
                     minWidth: '180px',
-                    background: restoring ? '#4b7a5e' : undefined,
+                    background: restoring ? '#64748b' : undefined,
                   }}
                 >
                   {restoring ? 'Restoring…' : 'Restore Backup'}

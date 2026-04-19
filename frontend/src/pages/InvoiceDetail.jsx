@@ -56,13 +56,13 @@ export default function InvoiceDetail() {
 
       <div className="sap-card" style={{ padding: '32px' }}>
         <div style={{
-          borderBottom: '2.5px solid var(--forest)',
+          borderBottom: '2.5px solid var(--navy)',
           paddingBottom: '20px', marginBottom: '24px',
         }}>
           <div style={{
             fontFamily: "Georgia, 'Times New Roman', serif",
             fontSize: '22px', fontWeight: 700,
-            color: 'var(--forest)', letterSpacing: '-0.01em',
+            color: 'var(--navy)', letterSpacing: '-0.01em',
           }}>
             Shaukat Abbas Pesticides
           </div>

@@ -19,32 +19,32 @@ export default function Layout() {
       {/* ── Sidebar ───────────────────────────────── */}
       <aside style={{
         width: '216px', flexShrink: 0,
-        background: 'var(--forest)',
+        background: '#ffffff',
+        borderRight: '1px solid #e2e8f0',
         display: 'flex', flexDirection: 'column',
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Brand */}
         <div style={{
           padding: '28px 22px 22px',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid #e2e8f0',
         }}>
           <div style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontWeight: 700, fontSize: '16px',
-            color: '#fff', lineHeight: 1.25, letterSpacing: '-0.01em',
+            fontWeight: 700, fontSize: '15px',
+            color: '#0f172a', lineHeight: 1.25, letterSpacing: '-0.01em',
           }}>
             Shaukat Abbas
           </div>
           <div style={{
             fontSize: '9.5px', fontWeight: 700,
             letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.32)', marginTop: '2px',
+            color: '#94a3b8', marginTop: '2px',
           }}>
             Pesticides
           </div>
           <div style={{
             width: '28px', height: '2.5px',
-            background: 'var(--amber)', borderRadius: '2px', marginTop: '14px',
+            background: '#2563eb', borderRadius: '2px', marginTop: '14px',
           }} />
         </div>
 
@@ -59,11 +59,11 @@ export default function Layout() {
                 padding: '9px 22px',
                 fontSize: '13px',
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.46)',
+                color: isActive ? '#2563eb' : '#64748b',
                 textDecoration: 'none',
                 transition: 'color 0.12s, background 0.12s',
-                background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
-                borderLeft: isActive ? '2.5px solid var(--amber)' : '2.5px solid transparent',
+                background: isActive ? 'rgba(37,99,235,0.07)' : 'transparent',
+                borderLeft: isActive ? '2.5px solid #2563eb' : '2.5px solid transparent',
               })}
             >
               {label}
@@ -74,10 +74,10 @@ export default function Layout() {
         {/* Footer badge */}
         <div style={{
           padding: '14px 22px',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderTop: '1px solid #e2e8f0',
           fontSize: '10px', fontWeight: 600,
           letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,0.16)',
+          color: '#cbd5e1',
         }}>
           SAP Inventory v1.0
         </div>
@@ -86,7 +86,7 @@ export default function Layout() {
       {/* ── Main ──────────────────────────────────── */}
       <main style={{
         flex: 1, overflowY: 'auto',
-        background: 'var(--cream)',
+        background: '#f8fafc',
         padding: '32px 36px',
       }}>
         <Outlet />

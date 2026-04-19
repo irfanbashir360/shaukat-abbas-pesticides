@@ -39,7 +39,7 @@ export default function Invoices() {
               const { status, label } = invoiceStatus(inv)
               return (
                 <tr key={inv.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/invoices/${inv.id}`)}>
-                  <td style={{ fontWeight: 700, color: 'var(--amber)' }}>{inv.invoice_number}</td>
+                  <td style={{ fontWeight: 700, color: 'var(--sky)' }}>{inv.invoice_number}</td>
                   <td>{new Date(inv.issued_date).toLocaleDateString()}</td>
                   <td>{new Date(inv.payment_due_date).toLocaleDateString()}</td>
                   <td>{new Date(inv.validity_expiry_date).toLocaleDateString()}</td>

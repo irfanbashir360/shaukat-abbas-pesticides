@@ -14,7 +14,7 @@ function StatCard({ label, value, accent, note }) {
       {accent && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-          background: 'var(--amber)',
+          background: 'var(--accent)',
         }} />
       )}
       <div className="sap-section-title" style={{ marginBottom: '10px' }}>{label}</div>

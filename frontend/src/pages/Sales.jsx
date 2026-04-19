@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSales, createSale, voidSale, getCustomers, getProducts, createInvoice } from '../api/client'
+import { getSales, createSale, updateSale, voidSale, getCustomers, getProducts, createInvoice, createCustomer } from '../api/client'
 import LineItemsTable from '../components/LineItemsTable'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
@@ -15,9 +15,10 @@ export default function Sales() {
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
   const [showForm, setShowForm] = useState(false)
+  const [editingSale, setEditingSale] = useState(null)
   const [invoiceModal, setInvoiceModal] = useState(null)
   const [invForm, setInvForm] = useState({ payment_due_date: '', validity_expiry_date: '' })
-  const [form, setForm] = useState({ date: today(), customer_id: '', notes: '', items: [{ ...EMPTY_ITEM }] })
+  const [form, setForm] = useState({ date: today(), customer_id: '', walkin_name: '', notes: '', items: [{ ...EMPTY_ITEM }] })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
@@ -27,32 +28,73 @@ export default function Sales() {
   const load = () => getSales().then(setSales)
   useEffect(() => { load(); getCustomers().then(setCustomers); getProducts().then(setProducts) }, [])
 
+  const openEdit = (sale) => {
+    setEditingSale(sale)
+    setForm({
+      date: new Date(sale.date).toISOString().slice(0, 16),
+      customer_id: String(sale.customer_id),
+      walkin_name: '',
+      notes: sale.notes || '',
+      items: sale.items.map(i => ({
+        product_id: String(i.product_id),
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+      }))
+    })
+    setError('')
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingSale(null)
+    setForm({ date: today(), customer_id: '', walkin_name: '', notes: '', items: [{ ...EMPTY_ITEM }] })
+    setError('')
+  }
+
   const handleItemChange = (idx, field, val) =>
     setForm(f => { const items = [...f.items]; items[idx] = { ...items[idx], [field]: val }; return { ...f, items } })
 
   const total = form.items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
 
   const handleSubmit = async () => {
+    const isWalkin = form.customer_id === 'walkin'
     if (!form.customer_id) return setError('Please select a customer')
+    if (isWalkin && !form.walkin_name.trim()) return setError('Please enter the walk-in customer name')
     if (form.items.length === 0) return setError('Add at least one item')
     if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
     if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
     if (form.items.some(i => i.unit_price <= 0)) return setError('All unit prices must be greater than 0')
     try {
       setError(''); setSaving(true)
-      const payload = {
-        ...form,
-        customer_id: parseInt(form.customer_id),
-        date: new Date(form.date).toISOString(),
-        items: form.items.map(i => ({ ...i, product_id: parseInt(i.product_id), quantity: parseFloat(i.quantity), unit_price: parseFloat(i.unit_price) }))
+      let customerId
+      if (isWalkin) {
+        const newCustomer = await createCustomer({ name: form.walkin_name.trim(), phone: '', address: '' })
+        customerId = newCustomer.id
+        await getCustomers().then(setCustomers)
+      } else {
+        customerId = parseInt(form.customer_id)
       }
-      const sale = await createSale(payload)
+      const payload = {
+        date: new Date(form.date).toISOString(),
+        customer_id: customerId,
+        notes: form.notes,
+        items: form.items.map(i => ({ product_id: parseInt(i.product_id), quantity: parseFloat(i.quantity), unit_price: parseFloat(i.unit_price) }))
+      }
+      let sale
+      if (editingSale) {
+        sale = await updateSale(editingSale.id, payload)
+        toast('Sale updated successfully')
+      } else {
+        sale = await createSale(payload)
+        toast('Sale recorded successfully')
+      }
       await load()
-      setShowForm(false)
-      setForm({ date: today(), customer_id: '', notes: '', items: [{ ...EMPTY_ITEM }] })
-      toast('Sale recorded successfully')
-      const yes = await confirm('Sale saved. Create invoice now?')
-      if (yes) setInvoiceModal(sale)
+      closeForm()
+      if (!editingSale) {
+        const yes = await confirm('Sale saved. Create invoice now?')
+        if (yes) setInvoiceModal(sale)
+      }
     } catch (e) {
       setError(e.response?.data?.detail || 'Failed to create sale')
     } finally { setSaving(false) }
@@ -88,11 +130,11 @@ export default function Sales() {
     <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <h1 className="sap-h1">Sales</h1>
-        <button className="sap-btn sap-btn-primary" onClick={() => setShowForm(true)}>+ New Sale</button>
+        <button className="sap-btn sap-btn-primary" onClick={() => { setEditingSale(null); setShowForm(true) }}>+ New Sale</button>
       </div>
 
       {showForm && (
-        <Modal title="New Sale" onClose={() => setShowForm(false)} size="lg">
+        <Modal title={editingSale ? `Edit Sale #${editingSale.id}` : 'New Sale'} onClose={closeForm} size="lg">
           {error && <div className="sap-error">{error}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
             <div>
@@ -101,10 +143,22 @@ export default function Sales() {
             </div>
             <div>
               <label className="sap-label">Customer</label>
-              <select className="sap-input" value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
+              <select className="sap-input" value={form.customer_id}
+                onChange={e => setForm(f => ({ ...f, customer_id: e.target.value, walkin_name: '' }))}>
                 <option value="">Select customer…</option>
+                <option value="walkin">— Walk-in Customer</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              {form.customer_id === 'walkin' && (
+                <input
+                  className="sap-input"
+                  style={{ marginTop: '8px' }}
+                  placeholder="Enter customer name"
+                  value={form.walkin_name}
+                  onChange={e => setForm(f => ({ ...f, walkin_name: e.target.value }))}
+                  autoFocus
+                />
+              )}
             </div>
           </div>
           <LineItemsTable items={form.items} products={products}
@@ -112,16 +166,16 @@ export default function Sales() {
             onAdd={() => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))}
             onRemove={(idx) => setForm(f => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))} />
           <div style={{ textAlign: 'right', fontWeight: 700, margin: '12px 0', fontSize: '15px' }}>
-            Total: <span style={{ color: 'var(--amber)' }}>PKR {total.toLocaleString()}</span>
+            Total: <span style={{ color: 'var(--sky)' }}>PKR {total.toLocaleString()}</span>
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label className="sap-label">Notes</label>
             <textarea className="sap-input" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
-            <button className="sap-btn sap-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="sap-btn sap-btn-ghost" onClick={closeForm}>Cancel</button>
             <button className="sap-btn sap-btn-primary" onClick={handleSubmit} disabled={saving}>
-              {saving ? 'Saving…' : 'Save Sale'}
+              {saving ? 'Saving…' : editingSale ? 'Update Sale' : 'Save Sale'}
             </button>
           </div>
         </Modal>
@@ -156,7 +210,12 @@ export default function Sales() {
                 <td style={{ fontWeight: 600 }}>PKR {s.total_amount.toLocaleString()}</td>
                 <td>{s.is_voided ? <StatusBadge status="overdue" label="Voided" /> : <StatusBadge status="ok" label="Active" />}</td>
                 <td style={{ textAlign: 'right' }}>
-                  {!s.is_voided && <button className="sap-btn sap-btn-danger" onClick={() => handleVoid(s.id)}>Void</button>}
+                  {!s.is_voided && (
+                    <span style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                      <button className="sap-btn-link" onClick={() => openEdit(s)}>Edit</button>
+                      <button className="sap-btn sap-btn-danger" onClick={() => handleVoid(s.id)}>Void</button>
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

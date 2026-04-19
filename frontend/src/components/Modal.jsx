@@ -1,57 +1,58 @@
+import { createPortal } from 'react-dom'
+
 export default function Modal({ title, onClose, children, size = 'md' }) {
-  const maxW = size === 'lg' ? '680px' : '520px'
-  return (
+  const maxW = size === 'lg' ? '700px' : '520px'
+
+  const modal = (
     <div
-      onClick={e => e.target === e.currentTarget && onClose()}
       style={{
-        position: 'fixed', inset: 0, zIndex: 50,
-        background: 'rgba(10,22,16,0.55)',
-        backdropFilter: 'blur(3px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
-        animation: 'sapFadeUp 0.18s ease both',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 9000, overflowY: 'auto',
+        background: 'rgba(15,23,42,0.5)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
       }}
+      onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{
-        background: 'var(--white)',
-        borderRadius: 'var(--r-lg)',
-        boxShadow: 'var(--shadow-modal)',
-        width: '100%', maxWidth: maxW,
-        maxHeight: '90vh', overflowY: 'auto',
-        border: '1px solid var(--border)',
-      }}>
-        {/* Header */}
+      <div
+        style={{
+          minHeight: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '32px 20px', boxSizing: 'border-box',
+        }}
+        onClick={e => e.target === e.currentTarget && onClose()}
+      >
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '18px 24px',
-          borderBottom: '1px solid var(--border)',
+          background: '#fff',
+          borderRadius: '14px',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+          width: '100%', maxWidth: maxW,
+          border: '1px solid #e2e8f0',
+          animation: 'sapFadeUp 0.18s ease both',
         }}>
-          <h2 style={{
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: '18px', fontWeight: 700,
-            color: 'var(--text)', letterSpacing: '-0.01em',
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '18px 24px',
+            borderBottom: '1px solid #d1fae5',
           }}>
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(0,0,0,0.04)', border: 'none',
-              width: '28px', height: '28px',
-              borderRadius: '50%', cursor: 'pointer',
+            <h2 style={{
+              fontSize: '18px', fontWeight: 700, color: '#0f172a',
+            }}>
+              {title}
+            </h2>
+            <button onClick={onClose} style={{
+              background: 'rgba(0,0,0,0.05)', border: 'none',
+              width: '30px', height: '30px', borderRadius: '50%',
+              cursor: 'pointer', fontSize: '20px', color: '#64748b',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '16px', color: 'var(--text-muted)',
-              transition: 'background 0.12s, color 0.12s',
-            }}
-            onMouseEnter={e => { e.target.style.background = 'rgba(0,0,0,0.08)'; e.target.style.color = 'var(--text)' }}
-            onMouseLeave={e => { e.target.style.background = 'rgba(0,0,0,0.04)'; e.target.style.color = 'var(--text-muted)' }}
-          >
-            ×
-          </button>
+              lineHeight: 1, flexShrink: 0,
+            }}>×</button>
+          </div>
+          <div style={{ padding: '24px' }}>{children}</div>
         </div>
-        {/* Body */}
-        <div style={{ padding: '24px' }}>{children}</div>
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
