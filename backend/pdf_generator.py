@@ -14,12 +14,14 @@ from database import get_data_dir
 from models import BusinessSettings
 
 # ── Palette ──────────────────────────────────────────────────────────────────
-C_BLACK  = colors.HexColor("#000000")   # pure black – header/footer bg, borders
-C_WHITE  = colors.white                 # white – body background
-C_GRAY   = colors.HexColor("#f5f5f5")   # very light gray – unused (kept for reference)
-C_MUTED  = colors.HexColor("#555555")   # dark gray – label/muted text
-C_TEXT   = colors.HexColor("#111111")   # near-black – body text
-C_BORDER = colors.HexColor("#000000")   # black – all borders
+C_CHARCOAL = colors.HexColor("#2d3748")   # charcoal – header/footer bg
+C_BLUE     = colors.HexColor("#3b82f6")   # blue-500 – accent (invoice num, total, border)
+C_BLUE_DARK= colors.HexColor("#1e3a5f")   # deep blue – table header bg
+C_BLUE_TINT= colors.HexColor("#f0f9ff")   # blue-50 – alt row tint
+C_BORDER   = colors.HexColor("#e2e8f0")   # slate-200 – borders
+C_MUTED    = colors.HexColor("#64748b")   # slate-500 – label text
+C_WHITE    = colors.white
+C_TEXT     = colors.HexColor("#0f172a")   # slate-900 – body text
 
 
 def _safe(value, fallback=""):
@@ -54,10 +56,10 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         textColor=C_WHITE, leading=22)
     s_tagline = ParagraphStyle("tagline",
         fontName="Helvetica", fontSize=9,
-        textColor=colors.HexColor("#cccccc"), leading=13)
+        textColor=colors.HexColor("#a0aec0"), leading=13)
     s_header_right = ParagraphStyle("hdrRight",
         fontName="Helvetica", fontSize=9,
-        textColor=colors.HexColor("#cccccc"), leading=14, alignment=TA_RIGHT)
+        textColor=colors.HexColor("#a0aec0"), leading=14, alignment=TA_RIGHT)
     s_section_title = ParagraphStyle("secTitle",
         fontName="Helvetica-Bold", fontSize=8,
         textColor=C_MUTED, leading=12,
@@ -73,7 +75,7 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         textColor=C_MUTED, leading=13)
     s_invoice_num = ParagraphStyle("invNum",
         fontName="Helvetica-Bold", fontSize=15,
-        textColor=C_TEXT, leading=20)
+        textColor=C_BLUE, leading=20)
     s_th = ParagraphStyle("th",
         fontName="Helvetica-Bold", fontSize=9,
         textColor=C_WHITE, leading=12)
@@ -91,13 +93,13 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         textColor=C_MUTED, leading=16, alignment=TA_RIGHT)
     s_total_value = ParagraphStyle("totVal",
         fontName="Helvetica-Bold", fontSize=14,
-        textColor=C_TEXT, leading=20, alignment=TA_RIGHT)
+        textColor=C_BLUE, leading=20, alignment=TA_RIGHT)
     s_footer = ParagraphStyle("footer",
         fontName="Helvetica", fontSize=9,
-        textColor=colors.HexColor("#cccccc"), leading=14)
+        textColor=colors.HexColor("#a0aec0"), leading=14)
     s_footer_italic = ParagraphStyle("footerItalic",
         fontName="Helvetica-Oblique", fontSize=9,
-        textColor=colors.HexColor("#cccccc"), leading=14, alignment=TA_RIGHT)
+        textColor=colors.HexColor("#a0aec0"), leading=14, alignment=TA_RIGHT)
 
     # ── Invoice data ──────────────────────────────────────────────────────────
     sale     = invoice.sale
@@ -167,7 +169,7 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         colWidths=[W * 0.6, W * 0.4],
     )
     header_table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,-1), C_BLACK),
+        ("BACKGROUND", (0,0), (-1,-1), C_CHARCOAL),
         ("TOPPADDING",    (0,0), (-1,-1), 14),
         ("BOTTOMPADDING", (0,0), (-1,-1), 14),
         ("LEFTPADDING",   (0,0), (-1,-1), 16),
@@ -248,11 +250,9 @@ def generate_invoice_pdf(invoice, db) -> bytes:
 
     items_table = Table(rows, colWidths=col_widths, repeatRows=1)
     style_cmds = [
-        # Header row
-        ("BACKGROUND",    (0,0), (-1,0),  C_BLACK),
+        ("BACKGROUND",    (0,0), (-1,0),  C_BLUE_DARK),
         ("TOPPADDING",    (0,0), (-1,0),  8),
         ("BOTTOMPADDING", (0,0), (-1,0),  8),
-        # Data rows
         ("TOPPADDING",    (0,1), (-1,-1), 7),
         ("BOTTOMPADDING", (0,1), (-1,-1), 7),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
@@ -261,6 +261,9 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         ("LEFTPADDING",   (0,0), (-1,-1), 8),
         ("RIGHTPADDING",  (0,0), (-1,-1), 8),
     ]
+    for i in range(1, len(rows)):
+        if i % 2 == 0:
+            style_cmds.append(("BACKGROUND", (0,i), (-1,i), C_BLUE_TINT))
     items_table.setStyle(TableStyle(style_cmds))
     story.append(items_table)
     story.append(Spacer(1, 0.5*cm))
@@ -279,7 +282,8 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         ("LEFTPADDING",   (0,0), (-1,-1), 16),
         ("RIGHTPADDING",  (0,0), (-1,-1), 16),
         ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
-        ("BOX",           (0,0), (-1,-1), 1.5, C_BLACK),
+        ("BOX",           (0,0), (-1,-1), 1.5, C_BLUE),
+        ("ROUNDEDCORNERS", [4,4,4,4]),
     ]))
     story.append(total_table)
     story.append(Spacer(1, 0.5*cm))
@@ -302,7 +306,7 @@ def generate_invoice_pdf(invoice, db) -> bytes:
         colWidths=[W * 0.6, W * 0.4],
     )
     footer_table.setStyle(TableStyle([
-        ("BACKGROUND",    (0,0), (-1,-1), C_BLACK),
+        ("BACKGROUND",    (0,0), (-1,-1), C_CHARCOAL),
         ("TOPPADDING",    (0,0), (-1,-1), 12),
         ("BOTTOMPADDING", (0,0), (-1,-1), 12),
         ("LEFTPADDING",   (0,0), (-1,-1), 16),

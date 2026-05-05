@@ -34,8 +34,6 @@ export default function InvoiceDetail() {
     } finally { setMarking(false) }
   }
 
-  const handlePdf = () => window.open(getInvoicePdfUrl(inv.id), '_blank')
-
   return (
     <div className="sap-page" style={{ maxWidth: '680px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -49,8 +47,7 @@ export default function InvoiceDetail() {
               {marking ? 'Saving…' : 'Mark Paid'}
             </button>
           )}
-          <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
-          <button className="sap-btn sap-btn-ghost" onClick={handlePdf}>Export PDF</button>
+          <button className="sap-btn sap-btn-ghost" onClick={() => window.open(getInvoicePdfUrl(inv.id), '_blank')}>Print</button>
         </div>
       </div>
 
