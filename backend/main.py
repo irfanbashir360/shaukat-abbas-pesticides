@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from database import engine, SessionLocal
 import models
 
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
                 try:
                     conn.execute(text(sql))
                     conn.commit()
-                except Exception:
+                except OperationalError:
                     pass  # Column already exists
         units.seed_units(db)
     finally:
