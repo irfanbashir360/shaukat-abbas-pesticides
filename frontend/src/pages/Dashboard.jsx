@@ -1,34 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getDashboard, dismissPaymentAlert, dismissValidityAlert } from '../api/client'
-import StatusBadge from '../components/StatusBadge'
+import StatCard from '../components/ui/StatCard'
+import PageHeader from '../components/ui/PageHeader'
+import {
+  Chart as ChartJS, CategoryScale, LinearScale,
+  PointElement, LineElement, Filler, Tooltip,
+} from 'chart.js'
+import { Line } from 'react-chartjs-2'
 
-const numStyle = {
-  fontSize: '28px', fontWeight: 800,
-  color: 'var(--text)', letterSpacing: '-0.03em', lineHeight: 1,
-}
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
-function StatCard({ label, value, accent, note }) {
-  return (
-    <div className="sap-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
-      {accent && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-          background: 'var(--accent)',
-        }} />
-      )}
-      <div className="sap-section-title" style={{ marginBottom: '10px' }}>{label}</div>
-      <div style={numStyle}>
-        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', marginRight: '4px' }}>PKR</span>
-        {Number(value || 0).toLocaleString()}
-      </div>
-      {note && (
-        <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: value >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-          {note}
-        </div>
-      )}
-    </div>
-  )
+function pct(current, prev) {
+  if (!prev) return null
+  const diff = ((current - prev) / prev) * 100
+  return (diff >= 0 ? '↑' : '↓') + ' ' + Math.abs(diff).toFixed(1) + '% vs last month'
 }
 
 function AlertRow({ inv, onView, onDismiss, dateLabel, dateValue }) {
@@ -36,10 +22,10 @@ function AlertRow({ inv, onView, onDismiss, dateLabel, dateValue }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.04)',
+      padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
     }}>
       <div>
-        <span style={{ fontSize: '14px', fontWeight: 600 }}>{inv.invoice_number}</span>
+        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{inv.invoice_number}</span>
         <span style={{ marginLeft: '10px', fontSize: '13px', color: isPast ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 500 }}>
           {dateLabel}: {new Date(dateValue).toLocaleDateString()}{isPast ? ' · Overdue' : ''}
         </span>
@@ -64,99 +50,156 @@ export default function Dashboard() {
     </div>
   )
 
+  const outstandingTotal = (data.creditors_total_owed || 0) + (data.debtors_total_owed || 0)
+  const trend = pct(data.month_sales, data.monthly_sales_prev)
+
+  const chartData = {
+    labels: (data.daily_sales || []).map(p => {
+      const d = new Date(p.date)
+      return d.toLocaleDateString('en-PK', { month: 'short', day: 'numeric' })
+    }),
+    datasets: [{
+      data: (data.daily_sales || []).map(p => p.total),
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.08)',
+      fill: true,
+      tension: 0.35,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      borderWidth: 2,
+    }],
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: '#1e293b',
+      titleColor: '#94a3b8',
+      bodyColor: '#f8fafc',
+      borderColor: '#2d3f55',
+      borderWidth: 1,
+      callbacks: {
+        label: ctx => `PKR ${Number(ctx.parsed.y).toLocaleString()}`,
+      },
+    }},
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#64748b', font: { size: 11 }, maxTicksLimit: 8 },
+        border: { display: false },
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+        ticks: {
+          color: '#64748b', font: { size: 11 },
+          callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v,
+        },
+        border: { display: false },
+      },
+    },
+  }
+
   const hasAlerts = data.payment_due_alerts.length > 0 || data.validity_expiry_alerts.length > 0
 
   return (
-    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div>
-          <div className="sap-section-title" style={{ marginBottom: '4px' }}>
-            {new Date().toLocaleDateString('en-PK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <PageHeader
+        title="Dashboard"
+        action={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => navigate('/purchases')}>+ Purchase</button>
+            <button className="sap-btn sap-btn-primary" onClick={() => navigate('/sales')}>+ New Sale</button>
           </div>
-          <h1 className="sap-h1">Dashboard</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="sap-btn sap-btn-ghost" onClick={() => navigate('/purchases')}>+ Purchase</button>
-          <button className="sap-btn sap-btn-primary" onClick={() => navigate('/sales')}>+ New Sale</button>
-        </div>
-      </div>
+        }
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '14px' }}>
-        <StatCard label="Today's Sales" value={data.today_sales} />
-        <StatCard label="Month Sales" value={data.month_sales} />
-        <StatCard label="Month Purchases" value={data.month_purchases} />
-        <StatCard label="Net Profit" value={data.net_profit} accent
-          note={data.net_profit >= 0 ? '▲ Profitable this month' : '▼ Loss this month'} />
-      </div>
-
+      {/* Row 1: 2 hero stats */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <StatCard
+          label="Monthly Sales"
+          value={`PKR ${Number(data.month_sales || 0).toLocaleString()}`}
+          sub={trend}
+          accent="default"
+        />
+        <StatCard
+          label="Outstanding"
+          value={`PKR ${Number(outstandingTotal).toLocaleString()}`}
+          sub={`Creditors ${Number(data.creditors_total_owed || 0).toLocaleString()} / Debtors ${Number(data.debtors_total_owed || 0).toLocaleString()}`}
+          accent="danger"
+        />
+      </div>
+
+      {/* Row 2: 30-day line chart */}
+      <div className="sap-card" style={{ padding: '20px 24px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <div className="sap-section-title">Sales · Last 30 Days</div>
+        </div>
+        <div style={{ height: '160px' }}>
+          <Line data={chartData} options={chartOptions} />
+        </div>
+      </div>
+
+      {/* Row 3: 3 small stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px' }}>
+        <StatCard
+          label="Total Products"
+          value={data.product_count}
+          accent="default"
+        />
+        <StatCard
+          label="Low Stock"
+          value={data.low_stock_products.length}
+          sub={data.low_stock_products.length > 0 ? 'Items need restocking' : 'All levels healthy'}
+          accent={data.low_stock_products.length > 0 ? 'warning' : 'success'}
+        />
+        <StatCard
+          label="Invoice Alerts"
+          value={data.payment_due_alerts.length + data.validity_expiry_alerts.length}
+          sub={hasAlerts ? 'Requires attention' : 'No alerts'}
+          accent={hasAlerts ? 'danger' : 'success'}
+        />
+      </div>
+
+      {/* Low stock list */}
+      {data.low_stock_products.length > 0 && (
         <div className="sap-card" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-            <span className="sap-h2">Low Stock Alerts</span>
-            {data.low_stock_products.length > 0 && <span className="sap-badge badge-danger">{data.low_stock_products.length}</span>}
+            <span className="sap-h2">Low Stock</span>
+            <span className="sap-badge badge-warning">{data.low_stock_products.length}</span>
           </div>
-          {data.low_stock_products.length === 0
-            ? <div style={{ color: 'var(--text-muted)', fontSize: '14px', padding: '12px 0' }}>All stock levels are healthy.</div>
-            : data.low_stock_products.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-                <div>
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{p.name}</span>
-                  <span style={{ marginLeft: '6px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{p.category}</span>
-                </div>
-                <StatusBadge status="low" label={`${p.current_stock} ${p.unit}`} />
+          {data.low_stock_products.map(p => (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div>
+                <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{p.name}</span>
+                <span style={{ marginLeft: '6px', fontSize: '12px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{p.category}</span>
               </div>
-            ))
-          }
-        </div>
-
-        <div className="sap-card" style={{ padding: '20px 24px' }}>
-          <div className="sap-h2" style={{ marginBottom: '14px' }}>Creditors Summary</div>
-          <div style={{
-            fontSize: '32px', fontWeight: 800,
-            color: data.creditors_total_owed > 0 ? 'var(--danger)' : 'var(--success)',
-            letterSpacing: '-0.03em', lineHeight: 1,
-          }}>
-            <span style={{ fontSize: '15px', fontWeight: 600, marginRight: '4px', opacity: 0.7 }}>PKR</span>
-            {Number(data.creditors_total_owed || 0).toLocaleString()}
-          </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>Total outstanding balance</div>
-          {data.creditors_overdue_count > 0 && (
-            <div style={{ marginTop: '10px', padding: '8px 12px', background: 'var(--danger-subtle)', borderRadius: 'var(--r-sm)', fontSize: '13px', fontWeight: 600, color: 'var(--danger)' }}>
-              {data.creditors_overdue_count} creditor{data.creditors_overdue_count > 1 ? 's' : ''} overdue
+              <span className="sap-badge badge-warning">{p.current_stock} {p.unit}</span>
             </div>
-          )}
-          <button className="sap-btn-link" onClick={() => navigate('/creditors')} style={{ marginTop: '14px', display: 'inline-block' }}>
-            View all creditors →
-          </button>
+          ))}
         </div>
-      </div>
+      )}
 
+      {/* Invoice alerts */}
       {hasAlerts && (
         <div className="sap-card" style={{ padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
             <span className="sap-h2">Invoice Alerts</span>
             <span className="sap-badge badge-warning">{data.payment_due_alerts.length + data.validity_expiry_alerts.length}</span>
           </div>
-          {data.payment_due_alerts.length > 0 && (
-            <div style={{ marginBottom: data.validity_expiry_alerts.length > 0 ? '20px' : 0 }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--warning)', marginBottom: '8px' }}>Payment Due</div>
-              {data.payment_due_alerts.map(inv => (
-                <AlertRow key={inv.id} inv={inv} dateLabel="Due" dateValue={inv.payment_due_date}
-                  onView={() => navigate(`/invoices/${inv.id}`)}
-                  onDismiss={async () => { await dismissPaymentAlert(inv.id); load() }} />
-              ))}
-            </div>
-          )}
-          {data.validity_expiry_alerts.length > 0 && (
-            <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--danger)', marginBottom: '8px' }}>Validity Expiring</div>
-              {data.validity_expiry_alerts.map(inv => (
-                <AlertRow key={inv.id} inv={inv} dateLabel="Valid until" dateValue={inv.validity_expiry_date}
-                  onView={() => navigate(`/invoices/${inv.id}`)}
-                  onDismiss={async () => { await dismissValidityAlert(inv.id); load() }} />
-              ))}
-            </div>
-          )}
+          {data.payment_due_alerts.map(inv => (
+            <AlertRow key={inv.id} inv={inv} dateLabel="Due" dateValue={inv.payment_due_date}
+              onView={() => navigate(`/invoices/${inv.id}`)}
+              onDismiss={async () => { await dismissPaymentAlert(inv.id); load() }} />
+          ))}
+          {data.validity_expiry_alerts.map(inv => (
+            <AlertRow key={inv.id} inv={inv} dateLabel="Valid until" dateValue={inv.validity_expiry_date}
+              onView={() => navigate(`/invoices/${inv.id}`)}
+              onDismiss={async () => { await dismissValidityAlert(inv.id); load() }} />
+          ))}
         </div>
       )}
     </div>
