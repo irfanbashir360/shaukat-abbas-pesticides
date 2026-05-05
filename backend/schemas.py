@@ -2,7 +2,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
-from models import ProductCategory, PaymentType, CreditorStatus
+from models import ProductCategory, PaymentType, CreditorStatus, DebtorStatus
 
 # --- Product ---
 class ProductBase(BaseModel):
@@ -101,6 +101,9 @@ class SaleCreate(BaseModel):
     customer_id: int
     notes: str = ""
     items: List[SaleItemCreate]
+    payment_type: PaymentType = PaymentType.cash
+    amount_paid_upfront: float = 0.0
+    due_date: Optional[datetime] = None  # required when payment_type == credit
 
 class SaleOut(BaseModel):
     id: int
@@ -110,6 +113,9 @@ class SaleOut(BaseModel):
     notes: str
     is_voided: bool
     void_reason: str
+    payment_type: PaymentType
+    amount_paid_upfront: float
+    due_date: Optional[datetime] = None
     items: List[SaleItemOut]
     model_config = {"from_attributes": True}
 
@@ -143,6 +149,22 @@ class CreditorOut(BaseModel):
     total_paid: float
 
 class CreditorPaymentCreate(BaseModel):
+    date: datetime
+    amount_paid: float
+    notes: str = ""
+
+# --- Debtor ---
+class DebtorOut(BaseModel):
+    id: int
+    sale_id: int
+    customer_id: int
+    amount_owed: float
+    due_date: datetime
+    status: DebtorStatus
+    customer_name: str
+    total_paid: float
+
+class DebtorPaymentCreate(BaseModel):
     date: datetime
     amount_paid: float
     notes: str = ""
