@@ -237,7 +237,36 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-mid); }
 
-/* ── No-print utility ──────────────────────── */
+/* ── Print export ──────────────────────────── */
 @media print {
-  .no-print { display: none !important; }
+  /* Hide chrome */
+  aside,
+  nav,
+  .no-print,
+  .sap-btn,
+  .sap-btn-link,
+  .sap-btn-link-muted { display: none !important; }
+
+  /* Force white background and black text on everything */
+  body, main, .sap-page {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .sap-card,
+  .sap-table thead th,
+  .sap-table tbody td {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-color: #cccccc !important;
+  }
+
+  /* Full width — no sidebar margin */
+  main { padding: 16px !important; }
+
+  /* No page break inside table rows */
+  tr { page-break-inside: avoid; }
+
+  /* Make table fill page */
+  .sap-table { width: 100%; }
 }
