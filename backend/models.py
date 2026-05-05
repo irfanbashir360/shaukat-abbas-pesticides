@@ -19,6 +19,11 @@ class CreditorStatus(str, enum.Enum):
     partially_paid = "partially_paid"
     settled = "settled"
 
+class DebtorStatus(str, enum.Enum):
+    outstanding = "outstanding"
+    partially_paid = "partially_paid"
+    settled = "settled"
+
 class MovementType(str, enum.Enum):
     purchase = "purchase"
     sale = "sale"
@@ -84,9 +89,13 @@ class Sale(Base):
     notes = Column(Text, default="")
     is_voided = Column(Boolean, default=False)
     void_reason = Column(String, default="")
+    payment_type = Column(Enum(PaymentType), nullable=False, default=PaymentType.cash)
+    amount_paid_upfront = Column(Float, nullable=False, default=0.0)
+    due_date = Column(DateTime, nullable=True)
     customer = relationship("Customer", back_populates="sales")
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")
     invoice = relationship("Invoice", back_populates="sale", uselist=False)
+    debtor = relationship("Debtor", back_populates="sale", uselist=False)
 
 class SaleItem(Base):
     __tablename__ = "sale_items"
@@ -142,6 +151,27 @@ class CreditorPayment(Base):
     amount_paid = Column(Float, nullable=False)
     notes = Column(Text, default="")
     creditor = relationship("Creditor", back_populates="payments")
+
+class Debtor(Base):
+    __tablename__ = "debtors"
+    id = Column(Integer, primary_key=True, index=True)
+    sale_id = Column(Integer, ForeignKey("sales.id"), nullable=False, unique=True)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    amount_owed = Column(Float, nullable=False)
+    due_date = Column(DateTime, nullable=False)
+    status = Column(Enum(DebtorStatus), default=DebtorStatus.outstanding)
+    customer = relationship("Customer")
+    sale = relationship("Sale", back_populates="debtor")
+    payments = relationship("DebtorPayment", back_populates="debtor", cascade="all, delete-orphan")
+
+class DebtorPayment(Base):
+    __tablename__ = "debtor_payments"
+    id = Column(Integer, primary_key=True, index=True)
+    debtor_id = Column(Integer, ForeignKey("debtors.id"), nullable=False)
+    date = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    amount_paid = Column(Float, nullable=False)
+    notes = Column(Text, default="")
+    debtor = relationship("Debtor", back_populates="payments")
 
 class InvoiceAlertSettings(Base):
     __tablename__ = "invoice_alert_settings"

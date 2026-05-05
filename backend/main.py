@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from sqlalchemy import text
 from database import engine, SessionLocal
 import models
 
@@ -18,6 +19,18 @@ models.Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
+        # Migrate: add new columns to sales table if they don't exist
+        with engine.connect() as conn:
+            for sql in [
+                "ALTER TABLE sales ADD COLUMN payment_type VARCHAR DEFAULT 'cash'",
+                "ALTER TABLE sales ADD COLUMN amount_paid_upfront FLOAT DEFAULT 0.0",
+                "ALTER TABLE sales ADD COLUMN due_date DATETIME",
+            ]:
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                except Exception:
+                    pass  # Column already exists
         units.seed_units(db)
     finally:
         db.close()
