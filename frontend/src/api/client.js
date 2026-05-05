@@ -44,6 +44,10 @@ export const getInvoicePdfUrl = (id) => `/api/invoices/${id}/pdf`
 export const getCreditors = () => api.get('/creditors').then(r => r.data)
 export const recordCreditorPayment = (id, data) => api.post(`/creditors/${id}/payments`, data).then(r => r.data)
 
+// Debtors
+export const getDebtors = () => api.get('/debtors').then(r => r.data)
+export const recordDebtorPayment = (id, data) => api.post(`/debtors/${id}/payments`, data).then(r => r.data)
+
 // Dashboard
 export const getDashboard = () => api.get('/dashboard').then(r => r.data)
 
