@@ -10,7 +10,7 @@ from database import engine, SessionLocal
 import models
 
 from routers import (products, suppliers, customers, purchases,
-                     sales, invoices, creditors, dashboard, reports, settings,
+                     sales, invoices, creditors, debtors, dashboard, reports, settings,
                      units, backup)
 
 models.Base.metadata.create_all(bind=engine)
@@ -47,6 +47,7 @@ app.include_router(purchases.router,  prefix="/api/purchases",  tags=["purchases
 app.include_router(sales.router,      prefix="/api/sales",      tags=["sales"])
 app.include_router(invoices.router,   prefix="/api/invoices",   tags=["invoices"])
 app.include_router(creditors.router,  prefix="/api/creditors",  tags=["creditors"])
+app.include_router(debtors.router,    prefix="/api/debtors",    tags=["debtors"])
 app.include_router(dashboard.router,  prefix="/api/dashboard",  tags=["dashboard"])
 app.include_router(reports.router,    prefix="/api/reports",    tags=["reports"])
 app.include_router(settings.router,   prefix="/api/settings",   tags=["settings"])
