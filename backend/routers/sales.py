@@ -10,6 +10,9 @@ router = APIRouter()
 
 @router.post("", response_model=schemas.SaleOut, status_code=201)
 def create_sale(payload: schemas.SaleCreate, db: Session = Depends(get_db)):
+    if payload.payment_type == models.PaymentType.credit and not payload.due_date:
+        raise HTTPException(400, "due_date is required for credit sales")
+
     # Validate all stock BEFORE making any changes
     for item_data in payload.items:
         product = db.query(models.Product).filter(models.Product.id == item_data.product_id).first()
@@ -24,6 +27,9 @@ def create_sale(payload: schemas.SaleCreate, db: Session = Depends(get_db)):
     sale = models.Sale(
         date=payload.date, customer_id=payload.customer_id,
         total_amount=total, notes=payload.notes,
+        payment_type=payload.payment_type,
+        amount_paid_upfront=payload.amount_paid_upfront,
+        due_date=payload.due_date,
     )
     db.add(sale); db.flush()
 
@@ -40,6 +46,15 @@ def create_sale(payload: schemas.SaleCreate, db: Session = Depends(get_db)):
             reference_id=sale.id, reference_type="sale",
         ))
 
+    # Auto-create Debtor for credit sales
+    if payload.payment_type == models.PaymentType.credit:
+        amount_owed = total - payload.amount_paid_upfront
+        db.add(models.Debtor(
+            sale_id=sale.id, customer_id=payload.customer_id,
+            amount_owed=amount_owed, due_date=payload.due_date,
+            status=models.DebtorStatus.outstanding,
+        ))
+
     db.commit(); db.refresh(sale)
     return sale
 
@@ -48,6 +63,8 @@ def update_sale(sale_id: int, payload: schemas.SaleCreate, db: Session = Depends
     sale = db.query(models.Sale).filter(models.Sale.id == sale_id).first()
     if not sale: raise HTTPException(404, "Sale not found")
     if sale.is_voided: raise HTTPException(400, "Cannot edit a voided sale")
+    if payload.payment_type == models.PaymentType.credit and not payload.due_date:
+        raise HTTPException(400, "due_date is required for credit sales")
 
     # Restore stock from old items
     for item in sale.items:
@@ -78,6 +95,9 @@ def update_sale(sale_id: int, payload: schemas.SaleCreate, db: Session = Depends
     sale.date = payload.date
     sale.customer_id = payload.customer_id
     sale.notes = payload.notes
+    sale.payment_type = payload.payment_type
+    sale.amount_paid_upfront = payload.amount_paid_upfront
+    sale.due_date = payload.due_date
     sale.total_amount = sum(i.quantity * i.unit_price for i in payload.items)
     db.flush()
 
@@ -94,6 +114,24 @@ def update_sale(sale_id: int, payload: schemas.SaleCreate, db: Session = Depends
             movement_type=models.MovementType.sale, quantity_change=-item_data.quantity,
             reference_id=sale.id, reference_type="sale",
         ))
+
+    # Update or create Debtor record
+    if payload.payment_type == models.PaymentType.credit:
+        amount_owed = sale.total_amount - payload.amount_paid_upfront
+        if sale.debtor:
+            sale.debtor.customer_id = payload.customer_id
+            sale.debtor.amount_owed = amount_owed
+            sale.debtor.due_date = payload.due_date
+        else:
+            db.add(models.Debtor(
+                sale_id=sale.id, customer_id=payload.customer_id,
+                amount_owed=amount_owed, due_date=payload.due_date,
+                status=models.DebtorStatus.outstanding,
+            ))
+    else:
+        # Changed from credit to cash — remove debtor if no payments yet
+        if sale.debtor and not sale.debtor.payments:
+            db.delete(sale.debtor)
 
     db.commit(); db.refresh(sale)
     return sale
