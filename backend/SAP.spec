@@ -35,6 +35,6 @@ exe = EXE(
     debug=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
     icon='assets/icon.ico',
 )
