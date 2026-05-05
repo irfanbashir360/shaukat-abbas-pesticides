@@ -15,7 +15,7 @@ a = Analysis(
         'uvicorn.protocols.websockets', 'uvicorn.protocols.websockets.auto',
         'uvicorn.lifespan', 'uvicorn.lifespan.on',
         'reportlab', 'reportlab.lib', 'reportlab.platypus', 'reportlab.pdfgen',
-        'pystray', 'PIL',
+        'pystray', 'PIL', 'multipart',
         'routers.products', 'routers.suppliers', 'routers.customers',
         'routers.purchases', 'routers.sales', 'routers.invoices',
         'routers.creditors', 'routers.dashboard', 'routers.reports', 'routers.settings',
