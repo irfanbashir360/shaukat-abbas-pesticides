@@ -1,11 +1,14 @@
+// frontend/src/pages/Customers.jsx
 import { useEffect, useState } from 'react'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../api/client'
 import Modal from '../components/Modal'
+import PageHeader from '../components/ui/PageHeader'
+import SearchBar from '../components/ui/SearchBar'
+import DataTable from '../components/ui/DataTable'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
 
 const EMPTY = { name: '', phone: '', address: '' }
-const FIELDS = [['name', 'Name'], ['phone', 'Phone'], ['address', 'Address']]
 
 export default function Customers() {
   const [customers, setCustomers] = useState([])
@@ -13,6 +16,7 @@ export default function Customers() {
   const [form, setForm] = useState(EMPTY)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [q, setQ] = useState('')
   const toast = useToast()
   const { confirm } = useConfirm()
 
@@ -46,47 +50,64 @@ export default function Customers() {
     } catch (e) { toast(e.response?.data?.detail || 'Failed to delete customer', 'error') }
   }
 
+  const filtered = customers.filter(c => {
+    if (!q) return true
+    const lower = q.toLowerCase()
+    return c.name.toLowerCase().includes(lower) ||
+      (c.phone || '').toLowerCase().includes(lower)
+  })
+
   return (
-    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <h1 className="sap-h1">Customers</h1>
-        <button className="sap-btn sap-btn-primary" onClick={openAdd}>+ Add Customer</button>
-      </div>
-      <div className="sap-card" style={{ overflow: 'hidden' }}>
-        <table className="sap-table">
-          <thead><tr><th>Name</th><th>Phone</th><th>Address</th><th></th></tr></thead>
-          <tbody>
-            {customers.map(c => (
-              <tr key={c.id}>
-                <td style={{ fontWeight: 600 }}>{c.name}</td>
-                <td>{c.phone || '—'}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{c.address || '—'}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <span style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                    <button className="sap-btn-link" onClick={() => openEdit(c)}>Edit</button>
-                    <button className="sap-btn sap-btn-danger" onClick={() => handleDelete(c.id)}>Delete</button>
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {customers.length === 0 && <tr><td colSpan={4} className="sap-empty">No customers yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      <PageHeader
+        title="Customers"
+        action={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
+            <button className="sap-btn sap-btn-primary" onClick={openAdd}>+ Add Customer</button>
+          </div>
+        }
+      />
+
+      <SearchBar value={q} onChange={setQ} placeholder="Search by name or phone…" />
+
+      <DataTable
+        columns={[
+          { key: 'name', label: 'Name' },
+          { key: 'phone', label: 'Phone', render: c => c.phone || '—' },
+          { key: 'address', label: 'Address', render: c => c.address || '—' },
+          { key: 'actions', label: '', render: c => (
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button className="sap-btn-link" onClick={e => { e.stopPropagation(); openEdit(c) }}>Edit</button>
+              <button className="sap-btn-link-muted" onClick={e => { e.stopPropagation(); handleDelete(c.id) }}>Delete</button>
+            </div>
+          ), style: { width: '1px', whiteSpace: 'nowrap' }},
+        ]}
+        rows={filtered}
+        emptyMessage={q ? 'No customers match your search' : 'No customers yet'}
+      />
+
       {modal && (
         <Modal title={modal === 'add' ? 'Add Customer' : 'Edit Customer'} onClose={() => setModal(null)}>
           {error && <div className="sap-error">{error}</div>}
-          {FIELDS.map(([field, label]) => (
-            <div key={field} style={{ marginBottom: '14px' }}>
-              <label className="sap-label">{label}</label>
-              <input className="sap-input" value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {[['name', 'Name *'], ['phone', 'Phone'], ['address', 'Address']].map(([field, label]) => (
+              <div key={field}>
+                <label className="sap-label">{label}</label>
+                <input
+                  className="sap-input"
+                  value={form[field]}
+                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+                  placeholder={label.replace(' *', '')}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+              <button className="sap-btn sap-btn-ghost" onClick={() => setModal(null)}>Cancel</button>
+              <button className="sap-btn sap-btn-primary" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : modal === 'add' ? 'Add Customer' : 'Save Changes'}
+              </button>
             </div>
-          ))}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
-            <button className="sap-btn sap-btn-ghost" onClick={() => setModal(null)}>Cancel</button>
-            <button className="sap-btn sap-btn-primary" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </button>
           </div>
         </Modal>
       )}
