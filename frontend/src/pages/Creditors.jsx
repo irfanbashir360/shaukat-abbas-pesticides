@@ -1,7 +1,12 @@
+// frontend/src/pages/Creditors.jsx
 import { useEffect, useState } from 'react'
 import { getCreditors, recordCreditorPayment } from '../api/client'
-import StatusBadge from '../components/StatusBadge'
 import Modal from '../components/Modal'
+import StatCard from '../components/ui/StatCard'
+import PageHeader from '../components/ui/PageHeader'
+import SearchBar from '../components/ui/SearchBar'
+import DataTable from '../components/ui/DataTable'
+import Badge from '../components/ui/Badge'
 import { useToast } from '../components/Toast'
 
 export default function Creditors() {
@@ -11,6 +16,7 @@ export default function Creditors() {
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [q, setQ] = useState('')
   const toast = useToast()
 
   const load = () => getCreditors().then(setCreditors)
@@ -35,83 +41,84 @@ export default function Creditors() {
   }
 
   const now = new Date()
-  const total = creditors.reduce((s, c) => s + (c.amount_owed - c.total_paid), 0)
+  const total = creditors.reduce((s, c) => s + Math.max(0, c.amount_owed - c.total_paid), 0)
+  const overdue = creditors.filter(c => c.due_date && new Date(c.due_date) < now && c.status !== 'settled')
+
+  const filtered = creditors.filter(c => {
+    if (!q) return true
+    return (c.supplier_name || '').toLowerCase().includes(q.toLowerCase())
+  })
+
+  const statusBadge = c => {
+    if (c.status === 'settled') return <Badge variant="success" label="Settled" />
+    if (c.due_date && new Date(c.due_date) < now) return <Badge variant="danger" label="Overdue" />
+    if (c.status === 'partially_paid') return <Badge variant="warning" label="Partial" />
+    return <Badge variant="info" label="Outstanding" />
+  }
 
   return (
     <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <h1 className="sap-h1">Creditors</h1>
+      <PageHeader
+        title="Creditors"
+        action={<button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>}
+      />
 
-      <div style={{
-        background: 'var(--white)', border: '1px solid rgba(192,53,48,0.20)',
-        borderLeft: '4px solid var(--danger)',
-        borderRadius: 'var(--r)', padding: '18px 24px',
-        boxShadow: 'var(--shadow-sm)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div>
-          <div className="sap-section-title" style={{ marginBottom: '6px' }}>Total Outstanding</div>
-          <div style={{ fontSize: '30px', fontWeight: 800, color: 'var(--danger)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            <span style={{ fontSize: '15px', fontWeight: 600, marginRight: '4px', opacity: 0.7 }}>PKR</span>
-            {total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
-        </div>
-        <div className="sap-badge badge-danger">{creditors.filter(c => c.status !== 'settled').length} active</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <StatCard
+          label="Total Outstanding"
+          value={`PKR ${total.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          sub={`${creditors.filter(c => c.status !== 'settled').length} active creditors`}
+          accent="danger"
+        />
+        <StatCard
+          label="Overdue"
+          value={overdue.length}
+          sub={overdue.length > 0 ? 'Past due date' : 'None overdue'}
+          accent={overdue.length > 0 ? 'danger' : 'success'}
+        />
       </div>
 
-      <div className="sap-card" style={{ overflow: 'hidden' }}>
-        <table className="sap-table">
-          <thead>
-            <tr><th>Supplier</th><th>Owed</th><th>Paid</th><th>Balance</th><th>Due Date</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody>
-            {creditors.map(c => {
-              const isOverdue = new Date(c.due_date) < now && c.status !== 'settled'
-              return (
-                <tr key={c.id}>
-                  <td style={{ fontWeight: 600 }}>{c.supplier_name}</td>
-                  <td>PKR {Number(c.amount_owed).toLocaleString()}</td>
-                  <td style={{ color: 'var(--success)' }}>PKR {Number(c.total_paid).toLocaleString()}</td>
-                  <td style={{ fontWeight: 700 }}>PKR {(c.amount_owed - c.total_paid).toLocaleString()}</td>
-                  <td>{new Date(c.due_date).toLocaleDateString()}</td>
-                  <td>{isOverdue ? <StatusBadge status="overdue" label="Overdue" /> : <StatusBadge status={c.status} />}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    {c.status !== 'settled' && (
-                      <button className="sap-btn-link" onClick={() => { setPayModal(c); setAmount(''); setNotes(''); setError('') }}>
-                        Record Payment
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-            {creditors.length === 0 && <tr><td colSpan={7} className="sap-empty">No outstanding creditors.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <SearchBar value={q} onChange={setQ} placeholder="Search by supplier…" />
+
+      <DataTable
+        columns={[
+          { key: 'supplier_name', label: 'Supplier' },
+          { key: 'amount_owed', label: 'Total Owed', render: c => `PKR ${Number(c.amount_owed).toLocaleString()}` },
+          { key: 'total_paid', label: 'Paid', render: c => `PKR ${Number(c.total_paid || 0).toLocaleString()}` },
+          { key: 'remaining', label: 'Remaining', render: c => {
+            const rem = Math.max(0, c.amount_owed - c.total_paid)
+            return <span style={{ fontWeight: 700, color: rem > 0 ? 'var(--danger)' : 'var(--success)' }}>PKR {rem.toLocaleString()}</span>
+          }},
+          { key: 'due_date', label: 'Due Date', render: c => c.due_date ? new Date(c.due_date).toLocaleDateString() : '—' },
+          { key: 'status', label: 'Status', render: statusBadge },
+          { key: 'actions', label: '', render: c => c.status !== 'settled' ? (
+            <button className="sap-btn-link" onClick={e => { e.stopPropagation(); setPayModal(c); setAmount(''); setNotes(''); setError('') }}>
+              Record Payment
+            </button>
+          ) : null, style: { width: '1px', whiteSpace: 'nowrap' }},
+        ]}
+        rows={filtered}
+        emptyMessage={q ? 'No creditors match your search' : 'No creditors yet'}
+      />
 
       {payModal && (
-        <Modal title="Record Payment" onClose={() => setPayModal(null)}>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            Supplier: <strong style={{ color: 'var(--text)' }}>{payModal.supplier_name}</strong>
-          </p>
-          <p style={{ fontSize: '14px', marginBottom: '16px', color: 'var(--danger)', fontWeight: 600 }}>
-            Balance due: PKR {(payModal.amount_owed - payModal.total_paid).toLocaleString()}
-          </p>
+        <Modal title={`Record Payment — ${payModal.supplier_name}`} onClose={() => setPayModal(null)}>
           {error && <div className="sap-error">{error}</div>}
-          <div style={{ marginBottom: '14px' }}>
-            <label className="sap-label">Amount Paid (PKR)</label>
-            <input className="sap-input" type="number" min="0" step="0.01" value={amount}
-              onChange={e => setAmount(e.target.value)} autoFocus />
-          </div>
-          <div style={{ marginBottom: '14px' }}>
-            <label className="sap-label">Notes (optional)</label>
-            <textarea className="sap-input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
-            <button className="sap-btn sap-btn-ghost" onClick={() => setPayModal(null)}>Cancel</button>
-            <button className="sap-btn sap-btn-primary" onClick={handlePay} disabled={saving}>
-              {saving ? 'Saving…' : 'Record Payment'}
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label className="sap-label">Amount Paid (PKR)</label>
+              <input className="sap-input" type="number" min="0" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <label className="sap-label">Notes (optional)</label>
+              <input className="sap-input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Payment notes…" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+              <button className="sap-btn sap-btn-ghost" onClick={() => setPayModal(null)}>Cancel</button>
+              <button className="sap-btn sap-btn-primary" onClick={handlePay} disabled={saving}>
+                {saving ? 'Saving…' : 'Record Payment'}
+              </button>
+            </div>
           </div>
         </Modal>
       )}
