@@ -38,8 +38,8 @@
   --green-hover:    #22c55e;
   --green-light:    #86efac;
   --green-subtle:   rgba(74,222,128,0.14);
-  --navy:           #0f172a;
-  --forest:         #0f172a;
+  --navy:           var(--text-primary);
+  --forest:         var(--text-primary);
   --cream:          #1e293b;
   --accent-light:   #60a5fa;
 
