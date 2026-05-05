@@ -47,7 +47,7 @@ export default function InvoiceDetail() {
               {marking ? 'Saving…' : 'Mark Paid'}
             </button>
           )}
-          <button className="sap-btn sap-btn-ghost" onClick={() => window.open(getInvoicePdfUrl(inv.id), '_blank')}>Print</button>
+          <button className="sap-btn sap-btn-ghost" onClick={() => window.open(getInvoicePdfUrl(inv.id), '_blank')}>Print PDF</button>
         </div>
       </div>
 

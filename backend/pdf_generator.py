@@ -16,7 +16,7 @@ from models import BusinessSettings
 # ── Palette ──────────────────────────────────────────────────────────────────
 C_CHARCOAL = colors.HexColor("#2d3748")   # charcoal – header/footer bg
 C_BLUE     = colors.HexColor("#3b82f6")   # blue-500 – accent (invoice num, total, border)
-C_BLUE_DARK= colors.HexColor("#1e3a5f")   # deep blue – table header bg
+C_BLUE_DARK = colors.HexColor("#1e3a5f")   # deep blue – table header bg
 C_BLUE_TINT= colors.HexColor("#f0f9ff")   # blue-50 – alt row tint
 C_BORDER   = colors.HexColor("#e2e8f0")   # slate-200 – borders
 C_MUTED    = colors.HexColor("#64748b")   # slate-500 – label text
