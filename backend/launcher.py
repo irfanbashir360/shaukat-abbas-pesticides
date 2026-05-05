@@ -12,7 +12,8 @@ def get_resource_path(relative_path: str) -> str:
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 def start_server():
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, log_level="error")
+    from main import app
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="error")
 
 def main():
     t = threading.Thread(target=start_server, daemon=True)
