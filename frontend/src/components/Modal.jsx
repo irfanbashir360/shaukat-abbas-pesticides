@@ -8,7 +8,7 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 9000, overflowY: 'auto',
-        background: 'rgba(15,23,42,0.5)',
+        background: 'rgba(0,0,0,0.65)',
         backdropFilter: 'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
       }}
@@ -23,27 +23,25 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
         onClick={e => e.target === e.currentTarget && onClose()}
       >
         <div style={{
-          background: '#fff',
+          background: 'var(--bg-card)',
           borderRadius: '14px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+          boxShadow: 'var(--shadow-modal)',
           width: '100%', maxWidth: maxW,
-          border: '1px solid #e2e8f0',
+          border: '1px solid var(--border)',
           animation: 'sapFadeUp 0.18s ease both',
         }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '18px 24px',
-            borderBottom: '1px solid #d1fae5',
+            borderBottom: '1px solid var(--border)',
           }}>
-            <h2 style={{
-              fontSize: '18px', fontWeight: 700, color: '#0f172a',
-            }}>
+            <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>
               {title}
             </h2>
             <button onClick={onClose} style={{
-              background: 'rgba(0,0,0,0.05)', border: 'none',
+              background: 'rgba(255,255,255,0.07)', border: 'none',
               width: '30px', height: '30px', borderRadius: '50%',
-              cursor: 'pointer', fontSize: '20px', color: '#64748b',
+              cursor: 'pointer', fontSize: '20px', color: 'var(--text-muted)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               lineHeight: 1, flexShrink: 0,
             }}>×</button>

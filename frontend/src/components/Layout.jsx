@@ -7,7 +7,7 @@ const NAV = [
   { to: '/sales',     label: 'Sales'     },
   { to: '/invoices',  label: 'Invoices'  },
   { to: '/creditors', label: 'Creditors' },
-  { to: '/debtors', label: 'Debtors' },
+  { to: '/debtors',   label: 'Debtors'   },
   { to: '/suppliers', label: 'Suppliers' },
   { to: '/customers', label: 'Customers' },
   { to: '/reports',   label: 'Reports'   },
@@ -20,33 +20,31 @@ export default function Layout() {
       {/* ── Sidebar ───────────────────────────────── */}
       <aside style={{
         width: '216px', flexShrink: 0,
-        background: '#ffffff',
-        borderRight: '1px solid #e2e8f0',
+        background: 'var(--bg-card)',
+        borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden',
       }}>
         {/* Brand */}
         <div style={{
           padding: '28px 22px 22px',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border)',
         }}>
-          <div style={{
-            fontWeight: 700, fontSize: '15px',
-            color: '#0f172a', lineHeight: 1.25, letterSpacing: '-0.01em',
-          }}>
-            Shaukat Abbas
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+            <div style={{
+              width: '8px', height: '8px', borderRadius: '50%',
+              background: 'var(--accent)', flexShrink: 0,
+            }} />
+            <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Shaukat Abbas
+            </div>
           </div>
           <div style={{
             fontSize: '9.5px', fontWeight: 700,
             letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: '#94a3b8', marginTop: '2px',
+            color: 'var(--text-muted)', marginLeft: '16px',
           }}>
             Pesticides
           </div>
-          <div style={{
-            width: '28px', height: '2.5px',
-            background: '#2563eb', borderRadius: '2px', marginTop: '14px',
-          }} />
         </div>
 
         {/* Nav links */}
@@ -60,11 +58,11 @@ export default function Layout() {
                 padding: '9px 22px',
                 fontSize: '13px',
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#2563eb' : '#64748b',
+                color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                 textDecoration: 'none',
                 transition: 'color 0.12s, background 0.12s',
-                background: isActive ? 'rgba(37,99,235,0.07)' : 'transparent',
-                borderLeft: isActive ? '2.5px solid #2563eb' : '2.5px solid transparent',
+                background: isActive ? 'var(--bg-hover)' : 'transparent',
+                borderLeft: isActive ? '3px solid var(--accent)' : '3px solid transparent',
               })}
             >
               {label}
@@ -75,10 +73,10 @@ export default function Layout() {
         {/* Footer badge */}
         <div style={{
           padding: '14px 22px',
-          borderTop: '1px solid #e2e8f0',
+          borderTop: '1px solid var(--border)',
           fontSize: '10px', fontWeight: 600,
           letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: '#cbd5e1',
+          color: 'var(--text-faint)',
         }}>
           SAP Inventory v1.0
         </div>
@@ -87,7 +85,7 @@ export default function Layout() {
       {/* ── Main ──────────────────────────────────── */}
       <main style={{
         flex: 1, overflowY: 'auto',
-        background: '#f8fafc',
+        background: 'var(--bg-base)',
         padding: '32px 36px',
       }}>
         <Outlet />
