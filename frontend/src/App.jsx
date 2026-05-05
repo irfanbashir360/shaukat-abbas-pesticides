@@ -9,6 +9,7 @@ import Sales from './pages/Sales'
 import Invoices from './pages/Invoices'
 import InvoiceDetail from './pages/InvoiceDetail'
 import Creditors from './pages/Creditors'
+import Debtors from './pages/Debtors'
 import Suppliers from './pages/Suppliers'
 import Customers from './pages/Customers'
 import Reports from './pages/Reports'
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="invoices" element={<Invoices />} />
               <Route path="invoices/:id" element={<InvoiceDetail />} />
               <Route path="creditors" element={<Creditors />} />
+              <Route path="debtors" element={<Debtors />} />
               <Route path="suppliers" element={<Suppliers />} />
               <Route path="customers" element={<Customers />} />
               <Route path="reports" element={<Reports />} />

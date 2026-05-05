@@ -7,6 +7,7 @@ const NAV = [
   { to: '/sales',     label: 'Sales'     },
   { to: '/invoices',  label: 'Invoices'  },
   { to: '/creditors', label: 'Creditors' },
+  { to: '/debtors', label: 'Debtors' },
   { to: '/suppliers', label: 'Suppliers' },
   { to: '/customers', label: 'Customers' },
   { to: '/reports',   label: 'Reports'   },
