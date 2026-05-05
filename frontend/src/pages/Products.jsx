@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { getProducts, createProduct, updateProduct, deleteProduct, getUnits } from '../api/client'
 import Modal from '../components/Modal'
-import StatusBadge from '../components/StatusBadge'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
+import PageHeader from '../components/ui/PageHeader'
+import SearchBar from '../components/ui/SearchBar'
+import DataTable from '../components/ui/DataTable'
+import Badge from '../components/ui/Badge'
 
 const CATEGORIES = ['fertilizer', 'seed', 'pesticide']
 const EMPTY = { name: '', category: 'fertilizer', unit: '', price_per_unit: '', current_stock: '', low_stock_threshold: '' }
@@ -16,6 +19,7 @@ export default function Products() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [units, setUnits] = useState([])
+  const [q, setQ] = useState('')
   const toast = useToast()
   const { confirm } = useConfirm()
 
@@ -58,54 +62,62 @@ export default function Products() {
     } catch (e) { toast(e.response?.data?.detail || 'Failed to delete product', 'error') }
   }
 
+  const filtered = products.filter(p => {
+    if (!q) return true
+    const lower = q.toLowerCase()
+    return p.name.toLowerCase().includes(lower) ||
+      (p.company || '').toLowerCase().includes(lower)
+  })
+
   return (
     <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <h1 className="sap-h1">Products</h1>
-        <button className="sap-btn sap-btn-primary" onClick={openAdd}>+ Add Product</button>
-      </div>
+      <PageHeader
+        title="Products"
+        action={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
+            <button className="sap-btn sap-btn-primary" onClick={openAdd}>+ Add Product</button>
+          </div>
+        }
+      />
 
-      <div className="sap-tabs">
+      {/* Category tabs */}
+      <div className="sap-tabs" style={{ marginBottom: '16px' }}>
         {CATEGORIES.map(cat => (
-          <button key={cat} className={`sap-tab ${tab === cat ? 'active' : ''}`} onClick={() => setTab(cat)}
-            style={{ textTransform: 'capitalize' }}>
-            {cat}s
+          <button key={cat} className={`sap-tab${tab === cat ? ' active' : ''}`} onClick={() => setTab(cat)}>
+            {cat}
           </button>
         ))}
       </div>
 
-      <div className="sap-card" style={{ overflow: 'hidden' }}>
-        <table className="sap-table">
-          <thead>
-            <tr><th>Name</th><th>Unit</th><th>Price / Unit</th><th>Stock</th><th>Status</th><th></th></tr>
-          </thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id}>
-                <td style={{ fontWeight: 600 }}>{p.name}</td>
-                <td style={{ color: 'var(--text-muted)' }}>{p.unit}</td>
-                <td>PKR {Number(p.price_per_unit).toLocaleString()}</td>
-                <td>{p.current_stock} {p.unit}</td>
-                <td>
-                  <StatusBadge
-                    status={p.current_stock <= p.low_stock_threshold ? 'low' : 'ok'}
-                    label={p.current_stock <= p.low_stock_threshold ? 'Low Stock' : 'OK'}
-                  />
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <span style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                    <button className="sap-btn-link" onClick={() => openEdit(p)}>Edit</button>
-                    <button className="sap-btn sap-btn-danger" onClick={() => handleDelete(p.id)}>Delete</button>
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {products.length === 0 && (
-              <tr><td colSpan={6} className="sap-empty">No {tab}s added yet.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <SearchBar value={q} onChange={setQ} placeholder="Search by name or company…" />
+
+      <DataTable
+        columns={[
+          { key: 'name', label: 'Name' },
+          { key: 'company', label: 'Company', render: p => p.company || '—' },
+          { key: 'unit', label: 'Unit' },
+          { key: 'price_per_unit', label: 'Price', render: p => `PKR ${Number(p.price_per_unit).toLocaleString()}` },
+          { key: 'current_stock', label: 'Stock', render: p => (
+            <span style={{ color: p.current_stock <= p.low_stock_threshold ? 'var(--warning)' : 'var(--text-primary)', fontWeight: 600 }}>
+              {p.current_stock} {p.unit}
+            </span>
+          )},
+          { key: 'status', label: 'Status', render: p =>
+            p.current_stock <= p.low_stock_threshold
+              ? <Badge variant="warning" label="Low Stock" />
+              : <Badge variant="success" label="OK" />
+          },
+          { key: 'actions', label: '', render: p => (
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button className="sap-btn-link" onClick={e => { e.stopPropagation(); openEdit(p) }}>Edit</button>
+              <button className="sap-btn-link-muted" onClick={e => { e.stopPropagation(); handleDelete(p.id) }}>Delete</button>
+            </div>
+          ), style: { width: '1px', whiteSpace: 'nowrap' }},
+        ]}
+        rows={filtered}
+        emptyMessage={q ? 'No products match your search' : `No ${tab} products yet`}
+      />
 
       {modal && (
         <Modal title={modal === 'add' ? 'Add Product' : 'Edit Product'} onClose={closeModal}>
