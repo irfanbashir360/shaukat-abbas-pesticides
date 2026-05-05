@@ -35,7 +35,7 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
             padding: '18px 24px',
             borderBottom: '1px solid var(--border)',
           }}>
-            <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
               {title}
             </h2>
             <button onClick={onClose} style={{
