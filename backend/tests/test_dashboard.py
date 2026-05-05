@@ -32,3 +32,34 @@ def test_dashboard_invoice_payment_alert(client, product, customer):
     client.post("/api/invoices", json={"sale_id": sale["id"], "payment_due_date": due_soon, "validity_expiry_date": valid})
     r = client.get("/api/dashboard")
     assert len(r.json()["payment_due_alerts"]) == 1
+
+def test_dashboard_has_daily_sales(client):
+    r = client.get("/api/dashboard")
+    assert r.status_code == 200
+    data = r.json()
+    assert "daily_sales" in data
+    assert isinstance(data["daily_sales"], list)
+    assert len(data["daily_sales"]) == 30
+    first = data["daily_sales"][0]
+    assert "date" in first
+    assert "total" in first
+
+def test_dashboard_has_monthly_sales_prev(client):
+    r = client.get("/api/dashboard")
+    assert r.status_code == 200
+    data = r.json()
+    assert "monthly_sales_prev" in data
+    assert isinstance(data["monthly_sales_prev"], float)
+
+def test_dashboard_has_debtors_total(client):
+    r = client.get("/api/dashboard")
+    assert r.status_code == 200
+    data = r.json()
+    assert "debtors_total_owed" in data
+
+def test_dashboard_has_product_count(client):
+    r = client.get("/api/dashboard")
+    assert r.status_code == 200
+    data = r.json()
+    assert "product_count" in data
+    assert isinstance(data["product_count"], int)

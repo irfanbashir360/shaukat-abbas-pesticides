@@ -170,16 +170,24 @@ class DebtorPaymentCreate(BaseModel):
     notes: str = ""
 
 # --- Dashboard ---
+class DailySalesPoint(BaseModel):
+    date: str   # "YYYY-MM-DD"
+    total: float
+
 class DashboardSummary(BaseModel):
     today_sales: float
     month_sales: float
+    monthly_sales_prev: float
     month_purchases: float
     net_profit: float
+    product_count: int
     low_stock_products: List[ProductOut]
     creditors_total_owed: float
     creditors_overdue_count: int
+    debtors_total_owed: float
     payment_due_alerts: List[InvoiceOut]
     validity_expiry_alerts: List[InvoiceOut]
+    daily_sales: List[DailySalesPoint]
 
 # --- Business Settings ---
 class BusinessSettingsFields(BaseModel):
