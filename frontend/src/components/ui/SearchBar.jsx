@@ -2,6 +2,7 @@ export default function SearchBar({ value, onChange, placeholder = 'Search…' }
   return (
     <div style={{ position: 'relative', marginBottom: '16px' }} className="no-print">
       <svg
+        aria-hidden="true"
         style={{
           position: 'absolute', left: '11px', top: '50%',
           transform: 'translateY(-50%)',

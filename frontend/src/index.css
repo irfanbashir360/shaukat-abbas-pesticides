@@ -236,3 +236,8 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-mid); }
+
+/* ── No-print utility ──────────────────────── */
+@media print {
+  .no-print { display: none !important; }
+}

@@ -10,7 +10,7 @@ export default function PageHeader({ title, action }) {
         fontSize: '22px', fontWeight: 700,
         color: 'var(--text-primary)', letterSpacing: '-0.01em',
       }}>{title}</h1>
-      {action && <div>{action}</div>}
+      {action}
     </div>
   )
 }
