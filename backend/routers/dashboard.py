@@ -32,7 +32,8 @@ def get_dashboard(db: Session = Depends(get_db)):
         models.Creditor.status != models.CreditorStatus.settled).all()
     total_paid_all = sum(sum(p.amount_paid for p in c.payments) for c in creditors)
     total_owed = max(0.0, sum(c.amount_owed for c in creditors) - total_paid_all)
-    overdue_count = sum(1 for c in creditors if c.due_date < datetime.now(timezone.utc))
+    now_naive = datetime.now()
+    overdue_count = sum(1 for c in creditors if c.due_date and c.due_date < now_naive)
 
     settings = db.query(models.InvoiceAlertSettings).first()
     pay_days = settings.payment_due_alert_days if settings else 3
