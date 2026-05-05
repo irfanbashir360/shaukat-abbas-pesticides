@@ -6,6 +6,10 @@ import StatusBadge from '../components/StatusBadge'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/Confirm'
 import { useNavigate } from 'react-router-dom'
+import PageHeader from '../components/ui/PageHeader'
+import SearchBar from '../components/ui/SearchBar'
+import DataTable from '../components/ui/DataTable'
+import Badge from '../components/ui/Badge'
 
 const today = () => new Date().toISOString().slice(0, 16)
 const EMPTY_ITEM = { product_id: '', quantity: 0, unit_price: 0 }
@@ -21,6 +25,7 @@ export default function Sales() {
   const [form, setForm] = useState({ date: today(), customer_id: '', walkin_name: '', notes: '', payment_type: 'cash', amount_paid_upfront: 0, due_date: '', items: [{ ...EMPTY_ITEM }] })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [q, setQ] = useState('')
   const navigate = useNavigate()
   const toast = useToast()
   const { confirm, prompt } = useConfirm()
@@ -133,12 +138,27 @@ export default function Sales() {
     } catch (e) { toast(e.response?.data?.detail || 'Failed to void sale', 'error') }
   }
 
+  const filtered = sales.filter(s => {
+    if (!q) return true
+    const lower = q.toLowerCase()
+    const customer = (s.customer_name || s.walkin_name || '').toLowerCase()
+    const inv = (s.invoice_number || '').toLowerCase()
+    return customer.includes(lower) || inv.includes(lower)
+  })
+
   return (
-    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <h1 className="sap-h1">Sales</h1>
-        <button className="sap-btn sap-btn-primary" onClick={() => { setEditingSale(null); setShowForm(true) }}>+ New Sale</button>
-      </div>
+    <div className="sap-page" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <PageHeader
+        title="Sales"
+        action={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="sap-btn sap-btn-ghost" onClick={() => window.print()}>Print</button>
+            <button className="sap-btn sap-btn-primary" onClick={() => { closeForm(); setShowForm(true) }}>+ New Sale</button>
+          </div>
+        }
+      />
+
+      <SearchBar value={q} onChange={setQ} placeholder="Search by customer or invoice…" />
 
       {showForm && (
         <Modal title={editingSale ? `Edit Sale #${editingSale.id}` : 'New Sale'} onClose={closeForm} size="lg">
@@ -231,37 +251,32 @@ export default function Sales() {
         </Modal>
       )}
 
-      <div className="sap-card" style={{ overflow: 'hidden' }}>
-        <table className="sap-table">
-          <thead><tr><th>Date</th><th>Customer</th><th>Total</th><th>Payment</th><th></th></tr></thead>
-          <tbody>
-            {sales.map(s => (
-              <tr key={s.id} className={s.is_voided ? 'voided' : ''}>
-                <td>{new Date(s.date).toLocaleDateString()}</td>
-                <td style={{ fontWeight: 500 }}>{customers.find(c => c.id === s.customer_id)?.name || '—'}</td>
-                <td style={{ fontWeight: 600 }}>PKR {s.total_amount.toLocaleString()}</td>
-                <td>
-                  {s.is_voided
-                    ? <StatusBadge status="overdue" label="Voided" />
-                    : s.payment_type === 'credit'
-                      ? <StatusBadge status="partially_paid" label="Credit" />
-                      : <StatusBadge status="ok" label="Cash" />
-                  }
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  {!s.is_voided && (
-                    <span style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                      <button className="sap-btn-link" onClick={() => openEdit(s)}>Edit</button>
-                      <button className="sap-btn sap-btn-danger" onClick={() => handleVoid(s.id)}>Void</button>
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {sales.length === 0 && <tr><td colSpan={5} className="sap-empty">No sales yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={[
+          { key: 'date', label: 'Date', render: s => new Date(s.date).toLocaleDateString() },
+          { key: 'invoice_number', label: 'Invoice' },
+          { key: 'customer', label: 'Customer', render: s => s.customer_name || s.walkin_name || '—' },
+          { key: 'type', label: 'Type', render: s => {
+            if (s.is_voided) return <Badge variant="muted" label="Voided" />
+            if (s.payment_type === 'credit') return <Badge variant="warning" label="Credit" />
+            return <Badge variant="success" label="Cash" />
+          }},
+          { key: 'total_amount', label: 'Total', render: s => `PKR ${Number(s.total_amount).toLocaleString()}` },
+          { key: 'actions', label: '', render: s => (
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              {!s.is_voided && (
+                <>
+                  <button className="sap-btn-link" onClick={e => { e.stopPropagation(); openEdit(s) }}>Edit</button>
+                  {s.invoice_id && <button className="sap-btn-link" onClick={e => { e.stopPropagation(); navigate(`/invoices/${s.invoice_id}`) }}>Invoice</button>}
+                  <button className="sap-btn-link-muted" onClick={e => { e.stopPropagation(); handleVoid(s.id) }}>Void</button>
+                </>
+              )}
+            </div>
+          ), style: { width: '1px', whiteSpace: 'nowrap' }},
+        ]}
+        rows={filtered.map(s => ({ ...s, _rowClass: s.is_voided ? 'voided' : '' }))}
+        emptyMessage={q ? 'No sales match your search' : 'No sales yet'}
+      />
     </div>
   )
 }
