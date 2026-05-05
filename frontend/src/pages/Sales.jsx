@@ -18,7 +18,7 @@ export default function Sales() {
   const [editingSale, setEditingSale] = useState(null)
   const [invoiceModal, setInvoiceModal] = useState(null)
   const [invForm, setInvForm] = useState({ payment_due_date: '', validity_expiry_date: '' })
-  const [form, setForm] = useState({ date: today(), customer_id: '', walkin_name: '', notes: '', items: [{ ...EMPTY_ITEM }] })
+  const [form, setForm] = useState({ date: today(), customer_id: '', walkin_name: '', notes: '', payment_type: 'cash', amount_paid_upfront: 0, due_date: '', items: [{ ...EMPTY_ITEM }] })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const navigate = useNavigate()
@@ -35,6 +35,9 @@ export default function Sales() {
       customer_id: String(sale.customer_id),
       walkin_name: '',
       notes: sale.notes || '',
+      payment_type: sale.payment_type || 'cash',
+      amount_paid_upfront: sale.amount_paid_upfront || 0,
+      due_date: sale.due_date ? new Date(sale.due_date).toISOString().slice(0, 10) : '',
       items: sale.items.map(i => ({
         product_id: String(i.product_id),
         quantity: i.quantity,
@@ -48,7 +51,7 @@ export default function Sales() {
   const closeForm = () => {
     setShowForm(false)
     setEditingSale(null)
-    setForm({ date: today(), customer_id: '', walkin_name: '', notes: '', items: [{ ...EMPTY_ITEM }] })
+    setForm({ date: today(), customer_id: '', walkin_name: '', notes: '', payment_type: 'cash', amount_paid_upfront: 0, due_date: '', items: [{ ...EMPTY_ITEM }] })
     setError('')
   }
 
@@ -65,6 +68,7 @@ export default function Sales() {
     if (form.items.some(i => !i.product_id)) return setError('Select a product for every item')
     if (form.items.some(i => i.quantity <= 0)) return setError('All quantities must be greater than 0')
     if (form.items.some(i => i.unit_price <= 0)) return setError('All unit prices must be greater than 0')
+    if (form.payment_type === 'credit' && !form.due_date) return setError('Please enter a due date for credit sale')
     try {
       setError(''); setSaving(true)
       let customerId
@@ -79,6 +83,9 @@ export default function Sales() {
         date: new Date(form.date).toISOString(),
         customer_id: customerId,
         notes: form.notes,
+        payment_type: form.payment_type,
+        amount_paid_upfront: form.payment_type === 'credit' ? parseFloat(form.amount_paid_upfront) || 0 : 0,
+        due_date: form.payment_type === 'credit' ? new Date(form.due_date).toISOString() : null,
         items: form.items.map(i => ({ product_id: parseInt(i.product_id), quantity: parseFloat(i.quantity), unit_price: parseFloat(i.unit_price) }))
       }
       let sale
@@ -161,6 +168,31 @@ export default function Sales() {
               )}
             </div>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+            <div>
+              <label className="sap-label">Payment Type</label>
+              <select className="sap-input" value={form.payment_type}
+                onChange={e => setForm(f => ({ ...f, payment_type: e.target.value, amount_paid_upfront: 0, due_date: '' }))}>
+                <option value="cash">Cash</option>
+                <option value="credit">Credit</option>
+              </select>
+            </div>
+            {form.payment_type === 'credit' && (
+              <>
+                <div>
+                  <label className="sap-label">Paid Upfront (PKR)</label>
+                  <input className="sap-input" type="number" min="0" step="0.01"
+                    value={form.amount_paid_upfront}
+                    onChange={e => setForm(f => ({ ...f, amount_paid_upfront: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="sap-label">Due Date</label>
+                  <input className="sap-input" type="date" value={form.due_date}
+                    onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                </div>
+              </>
+            )}
+          </div>
           <LineItemsTable items={form.items} products={products}
             onChange={handleItemChange}
             onAdd={() => setForm(f => ({ ...f, items: [...f.items, { ...EMPTY_ITEM }] }))}
@@ -201,14 +233,21 @@ export default function Sales() {
 
       <div className="sap-card" style={{ overflow: 'hidden' }}>
         <table className="sap-table">
-          <thead><tr><th>Date</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Date</th><th>Customer</th><th>Total</th><th>Payment</th><th></th></tr></thead>
           <tbody>
             {sales.map(s => (
               <tr key={s.id} className={s.is_voided ? 'voided' : ''}>
                 <td>{new Date(s.date).toLocaleDateString()}</td>
                 <td style={{ fontWeight: 500 }}>{customers.find(c => c.id === s.customer_id)?.name || '—'}</td>
                 <td style={{ fontWeight: 600 }}>PKR {s.total_amount.toLocaleString()}</td>
-                <td>{s.is_voided ? <StatusBadge status="overdue" label="Voided" /> : <StatusBadge status="ok" label="Active" />}</td>
+                <td>
+                  {s.is_voided
+                    ? <StatusBadge status="overdue" label="Voided" />
+                    : s.payment_type === 'credit'
+                      ? <StatusBadge status="partially_paid" label="Credit" />
+                      : <StatusBadge status="ok" label="Cash" />
+                  }
+                </td>
                 <td style={{ textAlign: 'right' }}>
                   {!s.is_voided && (
                     <span style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
